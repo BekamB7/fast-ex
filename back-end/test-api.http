@@ -3,13 +3,13 @@
 ### ============================================
 
 @baseUrl = http://localhost:5000/api
-@authToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25JZCI6ImZjYzJhM2I1LWQ2M2YtNGEyNy1iOTYzLTQ4ZDU2YzkyODhmYSIsImlhdCI6MTc4NzgzMjAzNSwiZXhwIjoxNzg4NDM2ODM1fQ.mbfD7e7SG62fz494txXzredoJcK5upEvSZRb-O39GPk
+@authToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25JZCI6ImU5YTk1NDRkLTg3MzItNDJhYi1hMmE1LTMyMjM0ZThlOTQ5NSIsImlhdCI6MTc4NzgzMzgwNCwiZXhwIjoxNzg4NDM4NjA0fQ.qJjLt0LDE9iWAfBo0s0sPgq0nQiPNkTqkfb-Ftwn0Ek
 
-### 1. HEALTH CHECK
-GET {{baseUrl}}/health
+### Health Check
+GET http://localhost:5000/api/health
 
-### 2. REGISTER ORGANIZATION
-POST {{baseUrl}}/auth/register
+### Register Organization
+POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
 {
@@ -20,9 +20,8 @@ Content-Type: application/json
   "address": "Addis Ababa, Ethiopia"
 }
 
-### 3. LOGIN - Get Token
-# @name loginResponse
-POST {{baseUrl}}/auth/login
+### Login
+POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
@@ -30,16 +29,8 @@ Content-Type: application/json
   "password": "password123"
 }
 
-### 4. SET TOKEN VARIABLE
-# Copy the token from the login response above
-# Then paste it in the variable at the top: @authToken = YOUR_TOKEN_HERE
-
-### 5. GET PROFILE (with token)
-GET {{baseUrl}}/auth/profile
-Authorization: Bearer {{authToken}}
-
-### 6. CREATE EXAM (with token)
-POST {{baseUrl}}/exam/create
+### Create Exam
+POST http://localhost:5000/api/exam/create
 Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
@@ -101,15 +92,9 @@ Authorization: Bearer {{authToken}}
     }
   ]
 }
-
-### 7. GET ALL EXAMS
-GET {{baseUrl}}/exam/organization
+### Get Organization Exams
+GET http://localhost:5000/api/exam/organization
 Authorization: Bearer {{authToken}}
 
-### 8. GET DASHBOARD STATS
-GET {{baseUrl}}/organization/dashboard
-Authorization: Bearer {{authToken}}
-
-### 9. GET RESULTS
-GET {{baseUrl}}/organization/results
-Authorization: Bearer {{authToken}}
+### Get Organization by Slug
+GET http://localhost:5000/api/public/abc-university
