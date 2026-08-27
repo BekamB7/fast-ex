@@ -1,14 +1,22 @@
 // src/routes/exam.routes.js
 import express from 'express'
 import { authenticate } from '../middleware/auth.middleware.js'
+import {
+  createExam,
+  getOrganizationExams,
+  getExamById,
+  updateExamStatus,
+} from '../controllers/exam.controller.js'
 
 const router = express.Router()
 
-// These will be implemented in the next phase
-router.post('/create', authenticate, (req, res) => {
-  res.json({ message: 'Create exam endpoint (coming soon)' })
-})
+// Protected routes (require authentication)
+router.post('/create', authenticate, createExam)
+router.get('/organization', authenticate, getOrganizationExams)
+router.get('/:id', authenticate, getExamById)
+router.patch('/:id/status', authenticate, updateExamStatus)
 
+// Student routes (no authentication needed)
 router.post('/validate', (req, res) => {
   res.json({ message: 'Validate exam code endpoint (coming soon)' })
 })

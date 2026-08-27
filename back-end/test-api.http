@@ -1,0 +1,115 @@
+### ============================================
+### FAST-EX API TESTING (with Variables)
+### ============================================
+
+@baseUrl = http://localhost:5000/api
+@authToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25JZCI6ImZjYzJhM2I1LWQ2M2YtNGEyNy1iOTYzLTQ4ZDU2YzkyODhmYSIsImlhdCI6MTc4NzgzMjAzNSwiZXhwIjoxNzg4NDM2ODM1fQ.mbfD7e7SG62fz494txXzredoJcK5upEvSZRb-O39GPk
+
+### 1. HEALTH CHECK
+GET {{baseUrl}}/health
+
+### 2. REGISTER ORGANIZATION
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "ABC University",
+  "adminEmail": "admin@abc.edu",
+  "password": "password123",
+  "phone": "0912345678",
+  "address": "Addis Ababa, Ethiopia"
+}
+
+### 3. LOGIN - Get Token
+# @name loginResponse
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "adminEmail": "admin@abc.edu",
+  "password": "password123"
+}
+
+### 4. SET TOKEN VARIABLE
+# Copy the token from the login response above
+# Then paste it in the variable at the top: @authToken = YOUR_TOKEN_HERE
+
+### 5. GET PROFILE (with token)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{authToken}}
+
+### 6. CREATE EXAM (with token)
+POST {{baseUrl}}/exam/create
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "title": "Exit Exam 2026 - English",
+  "description": "Comprehensive exit exam for 2026 batch",
+  "batchYear": 2026,
+  "language": "English",
+  "timeLimitMinutes": 30,
+  "totalQuestions": 5,
+  "passingScore": 15,
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "What is the capital of France?",
+      "questionType": "mcq",
+      "optionA": "London",
+      "optionB": "Paris",
+      "optionC": "Berlin",
+      "optionD": "Madrid",
+      "correctAnswer": "B",
+      "marks": 1
+    },
+    {
+      "questionNumber": 2,
+      "questionText": "The Earth is flat.",
+      "questionType": "truefalse",
+      "optionA": "True",
+      "optionB": "False",
+      "correctAnswer": "B",
+      "marks": 1
+    },
+    {
+      "questionNumber": 3,
+      "questionText": "What is the chemical symbol for water?",
+      "questionType": "fillblank",
+      "correctAnswer": "H2O",
+      "marks": 1
+    },
+    {
+      "questionNumber": 4,
+      "questionText": "Which planet is known as the Red Planet?",
+      "questionType": "mcq",
+      "optionA": "Venus",
+      "optionB": "Mars",
+      "optionC": "Jupiter",
+      "optionD": "Saturn",
+      "correctAnswer": "B",
+      "marks": 1
+    },
+    {
+      "questionNumber": 5,
+      "questionText": "The sun rises in the west.",
+      "questionType": "truefalse",
+      "optionA": "True",
+      "optionB": "False",
+      "correctAnswer": "B",
+      "marks": 1
+    }
+  ]
+}
+
+### 7. GET ALL EXAMS
+GET {{baseUrl}}/exam/organization
+Authorization: Bearer {{authToken}}
+
+### 8. GET DASHBOARD STATS
+GET {{baseUrl}}/organization/dashboard
+Authorization: Bearer {{authToken}}
+
+### 9. GET RESULTS
+GET {{baseUrl}}/organization/results
+Authorization: Bearer {{authToken}}
