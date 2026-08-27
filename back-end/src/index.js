@@ -9,6 +9,7 @@ import dotenv from 'dotenv'
 import authRoutes from './routes/auth.routes.js'
 import examRoutes from './routes/exam.routes.js'
 import organizationRoutes from './routes/organization.routes.js'
+import publicRoutes from './routes/public.routes.js'  // NEW
 
 dotenv.config()
 
@@ -28,6 +29,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/api/auth', authRoutes)
 app.use('/api/exam', examRoutes)
 app.use('/api/organization', organizationRoutes)
+app.use('/api/public', publicRoutes)  // NEW
 
 // Health check
 app.get('/api/health', (req, res) => {

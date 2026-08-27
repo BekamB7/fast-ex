@@ -3,6 +3,10 @@ import { prisma } from '../utils/db.js'
 import { hashPassword, comparePassword, generateToken } from '../utils/auth.js'
 import { z } from 'zod'
 
+// ============================================
+// VALIDATION SCHEMAS
+// ============================================
+
 const registerSchema = z.object({
   name: z.string().min(2).max(100),
   adminEmail: z.string().email(),
@@ -15,6 +19,10 @@ const loginSchema = z.object({
   adminEmail: z.string().email(),
   password: z.string().min(6),
 })
+
+// ============================================
+// REGISTER - Create new organization
+// ============================================
 
 export async function register(req, res) {
   try {
@@ -36,13 +44,21 @@ export async function register(req, res) {
       })
     }
 
+    // Generate slug from name (for URL: /abc-university)
+    const slug = validated.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+
     // Hash password
     const hashedPassword = await hashPassword(validated.password)
 
-    // Create organization
+    // Create organization with slug
     const organization = await prisma.organization.create({
       data: {
         name: validated.name,
+        slug: slug,
         adminEmail: validated.adminEmail,
         adminPassword: hashedPassword,
         phone: validated.phone,
@@ -55,6 +71,7 @@ export async function register(req, res) {
       organization: {
         id: organization.id,
         name: organization.name,
+        slug: organization.slug,
         adminEmail: organization.adminEmail,
       },
     })
@@ -71,6 +88,10 @@ export async function register(req, res) {
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+// ============================================
+// LOGIN - Authenticate organization
+// ============================================
 
 export async function login(req, res) {
   try {
@@ -113,6 +134,7 @@ export async function login(req, res) {
       organization: {
         id: organization.id,
         name: organization.name,
+        slug: organization.slug,
         adminEmail: organization.adminEmail,
       },
     })
@@ -130,6 +152,10 @@ export async function login(req, res) {
   }
 }
 
+// ============================================
+// LOGOUT - End session
+// ============================================
+
 export async function logout(req, res) {
   try {
     // Delete session
@@ -143,6 +169,10 @@ export async function logout(req, res) {
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+// ============================================
+// GET PROFILE - Get organization details
+// ============================================
 
 export async function getProfile(req, res) {
   try {
@@ -163,9 +193,12 @@ export async function getProfile(req, res) {
       organization: {
         id: organization.id,
         name: organization.name,
+        slug: organization.slug,
         adminEmail: organization.adminEmail,
         phone: organization.phone,
         address: organization.address,
+        logo: organization.logo,
+        primaryColor: organization.primaryColor,
         isActive: organization.isActive,
         createdAt: organization.createdAt,
         totalExams: organization.exams.length,

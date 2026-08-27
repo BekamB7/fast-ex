@@ -1,0 +1,100 @@
+### ============================================
+### FAST-EX API TESTING (with Variables)
+### ============================================
+
+@baseUrl = http://localhost:5000/api
+@authToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25JZCI6ImU5YTk1NDRkLTg3MzItNDJhYi1hMmE1LTMyMjM0ZThlOTQ5NSIsImlhdCI6MTc4NzgzMzgwNCwiZXhwIjoxNzg4NDM4NjA0fQ.qJjLt0LDE9iWAfBo0s0sPgq0nQiPNkTqkfb-Ftwn0Ek
+
+### Health Check
+GET http://localhost:5000/api/health
+
+### Register Organization
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "ABC University",
+  "adminEmail": "admin@abc.edu",
+  "password": "password123",
+  "phone": "0912345678",
+  "address": "Addis Ababa, Ethiopia"
+}
+
+### Login
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "adminEmail": "admin@abc.edu",
+  "password": "password123"
+}
+
+### Create Exam
+POST http://localhost:5000/api/exam/create
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "title": "Exit Exam 2026 - English",
+  "description": "Comprehensive exit exam for 2026 batch",
+  "batchYear": 2026,
+  "language": "English",
+  "timeLimitMinutes": 30,
+  "totalQuestions": 5,
+  "passingScore": 15,
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "What is the capital of France?",
+      "questionType": "mcq",
+      "optionA": "London",
+      "optionB": "Paris",
+      "optionC": "Berlin",
+      "optionD": "Madrid",
+      "correctAnswer": "B",
+      "marks": 1
+    },
+    {
+      "questionNumber": 2,
+      "questionText": "The Earth is flat.",
+      "questionType": "truefalse",
+      "optionA": "True",
+      "optionB": "False",
+      "correctAnswer": "B",
+      "marks": 1
+    },
+    {
+      "questionNumber": 3,
+      "questionText": "What is the chemical symbol for water?",
+      "questionType": "fillblank",
+      "correctAnswer": "H2O",
+      "marks": 1
+    },
+    {
+      "questionNumber": 4,
+      "questionText": "Which planet is known as the Red Planet?",
+      "questionType": "mcq",
+      "optionA": "Venus",
+      "optionB": "Mars",
+      "optionC": "Jupiter",
+      "optionD": "Saturn",
+      "correctAnswer": "B",
+      "marks": 1
+    },
+    {
+      "questionNumber": 5,
+      "questionText": "The sun rises in the west.",
+      "questionType": "truefalse",
+      "optionA": "True",
+      "optionB": "False",
+      "correctAnswer": "B",
+      "marks": 1
+    }
+  ]
+}
+### Get Organization Exams
+GET http://localhost:5000/api/exam/organization
+Authorization: Bearer {{authToken}}
+
+### Get Organization by Slug
+GET http://localhost:5000/api/public/abc-university
