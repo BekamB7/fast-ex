@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id            String   @id @default(uuid()) @db.Char(36)
+  name          String   @unique @db.VarChar(100)
+  adminEmail    String   @unique @db.VarChar(100)
+  adminPassword String   @db.VarChar(255)
+  phone         String?  @db.VarChar(20)
+  address       String?  @db.Text
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  exams         Exam[]
+  sessions      Session[]
+
+  @@map("organizations")
+}
+
+model Session {
+  id             String   @id @default(uuid()) @db.Char(36)
+  organizationId String   @db.Char(36)
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  token          String   @unique @db.VarChar(500)
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model Exam {
+  id               String   @id @default(uuid()) @db.Char(36)
+  organizationId   String   @db.Char(36)
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  examCode         String   @unique @db.VarChar(20)
+  title            String   @db.VarChar(200)
+  description      String?  @db.Text
+  batchYear        Int
+  language         String   @db.VarChar(50)
+  timeLimitMinutes Int      @default(30)
+  totalQuestions   Int      @default(30)
+  passingScore     Int      @default(15)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  questions        Question[]
+  attempts         StudentAttempt[]
+
+  @@map("exams")
+}
+
+model Question {
+  id             String     @id @default(uuid()) @db.Char(36)
+  examId         String     @db.Char(36)
+  exam           Exam       @relation(fields: [examId], references: [id])
+  questionNumber Int
+  questionText   String     @db.Text
+  questionType   QuestionType
+  optionA        String?    @db.Text
+  optionB        String?    @db.Text
+  optionC        String?    @db.Text
+  optionD        String?    @db.Text
+  correctAnswer  String     @db.Text
+  marks          Int        @default(1)
+  createdAt      DateTime   @default(now())
+
+  @@unique([examId, questionNumber])
+  @@map("questions")
+}
+
+enum QuestionType {
+  mcq
+  truefalse
+  fillblank
+}
+
+model StudentAttempt {
+  id             String    @id @default(uuid()) @db.Char(36)
+  examId         String    @db.Char(36)
+  exam           Exam      @relation(fields: [examId], references: [id])
+  studentUuid    String    @default(uuid()) @db.Char(36)
+  studentName    String    @db.VarChar(100)
+  studentPhone   String    @db.VarChar(20)
+  studentEmail   String?   @db.VarChar(100)
+  batchYear      Int
+  language       String    @db.VarChar(50)
+  examCode       String    @db.VarChar(20)
+  answersJson    Json?     @db.Json
+  score          Int       @default(0)
+  totalQuestions Int       @default(30)
+  percentage     Decimal   @default(0) @db.Decimal(5,2)
+  status         AttemptStatus @default(in_progress)
+  startedAt      DateTime  @default(now())
+  submittedAt    DateTime?
+  ipAddress      String?   @db.VarChar(45)
+  userAgent      String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([examId, studentPhone, studentName])
+  @@map("student_attempts")
+}
+
+enum AttemptStatus {
+  in_progress
+  submitted
+  timeout
+}
