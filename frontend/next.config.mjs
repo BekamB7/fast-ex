@@ -9,6 +9,7 @@ const nextConfig = {
     // Remove console.log in production
     removeConsole: process.env.NODE_ENV === 'production',
   },
+   allowedDevOrigins: ['192.168.0.100', 'localhost:3000' ,'https://fast-ex.loca.lt'],
 };
 
 export default nextConfig;
