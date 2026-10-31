@@ -16,6 +16,13 @@ export function generateToken(organizationId) {
   return jwt.sign({ organizationId }, JWT_SECRET, { expiresIn: '7d' })
 }
 
+export function generatePlatformToken(platformAdminId) {
+  return jwt.sign(
+    { platformAdminId, type: 'platform' },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  )
+}
 export function verifyToken(token) {
   try {
     return jwt.verify(token, JWT_SECRET)

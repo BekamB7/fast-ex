@@ -7,17 +7,20 @@ import { MobileBottomNav } from '@/components/public/MobileBottomNav'
 
 export default function SiteShell({ children }) {
   const pathname = usePathname()
-  const hidePublicShell = pathname?.startsWith('/dashboard') || pathname?.includes('/exam')
+  const hidePublicShell =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/admin') ||
+    pathname?.includes('/exam')
 
   if (hidePublicShell) {
-    return <main className="site-main">{children}</main>
+    return children
   }
 
   return (
     <div className="site-shell">
       <header className="site-header container">
-        <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+        <Link href="/" className="site-brand flex items-center gap-2 font-bold tracking-tight">
+          <span className="site-brand-mark flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
             <GraduationCap className="h-5 w-5" />
           </span>
 
@@ -26,7 +29,7 @@ export default function SiteShell({ children }) {
           </span>
         </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="site-desktop-navigation hidden items-center gap-8">
           <nav aria-label="Primary navigation" className="flex items-center gap-1">
             <Link href="/" className="desktop-nav-link">Home</Link>
             <Link href="/about" className="desktop-nav-link">About</Link>

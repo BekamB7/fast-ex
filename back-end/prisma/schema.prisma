@@ -113,6 +113,31 @@ model StudentAttempt {
   @@map("student_attempts")
 }
 
+model PlatformAdmin {
+  id           String   @id @default(uuid()) @db.Char(36)
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(100)
+  password     String   @db.VarChar(255)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     PlatformSession[]
+
+  @@map("platform_admins")
+}
+
+model PlatformSession {
+  id              String   @id @default(uuid()) @db.Char(36)
+  platformAdminId String   @db.Char(36)
+  platformAdmin   PlatformAdmin @relation(fields: [platformAdminId], references: [id])
+  token           String   @unique @db.VarChar(500)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@map("platform_sessions")
+}
+
 enum AttemptStatus {
   in_progress
   submitted
