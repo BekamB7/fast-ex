@@ -18,8 +18,6 @@ export function useAuth() {
         const token = localStorage.getItem('fastExToken')
         const userData = localStorage.getItem('fastExUser')
 
-        console.log('🔍 Auth check:', { hasToken: !!token, hasUser: !!userData })
-
         if (token && userData) {
           setUser(JSON.parse(userData))
         } else {
@@ -37,7 +35,6 @@ export function useAuth() {
   }, [])
 
   const login = useCallback((token, userData) => {
-    console.log('🔐 Logging in:', { token: token?.substring(0, 20) + '...', userData })
     localStorage.setItem('fastExToken', token)
     localStorage.setItem('fastExUser', JSON.stringify(userData))
     setUser(userData)

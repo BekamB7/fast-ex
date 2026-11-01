@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react'
 import api from '@/lib/api'
@@ -30,28 +31,22 @@ export default function LoginPage() {
     setError('')
 
     try {
-      console.log('📤 Sending login request...')
       const res = await api.post('/auth/login', formData)
-      console.log('📥 Login response:', res.data)
 
       if (res.data.token) {
-        // Save to localStorage FIRST
         localStorage.setItem('fastExToken', res.data.token)
         localStorage.setItem('fastExUser', JSON.stringify(res.data.organization))
-        
-        console.log('✅ Token and user saved to localStorage')
-        
-        // Small delay to ensure localStorage is written
-        setTimeout(() => {
-          console.log('🚀 Redirecting to /dashboard')
-          router.push('/dashboard')
-        }, 100)
+        router.push('/dashboard')
       } else {
         setError('Invalid login response')
       }
     } catch (err) {
-      console.error('❌ Login error:', err)
-      setError(err.response?.data?.error || 'Login failed. Please try again.')
+      console.error('Organization login failed:', err)
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Login failed. Please try again.',
+      )
     } finally {
       setLoading(false)
     }
@@ -167,10 +162,10 @@ export default function LoginPage() {
             </form>
 
             <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--color-muted-foreground)' }}>
-              Don't have an account?{' '}
-              <a href="/get-going" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>
+              Don&apos;t have an account?{' '}
+              <Link href="/get-going" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>
                 Register Organization
-              </a>
+              </Link>
             </p>
           </div>
         </motion.div>

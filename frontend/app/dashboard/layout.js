@@ -7,7 +7,9 @@ import {
   FileText,
   LayoutDashboard,
   PlusCircle,
+  Settings,
 } from 'lucide-react'
+import api from '@/lib/api'
 import WorkspaceShell from '@/components/dashboard/WorkspaceShell'
 
 const navItems = [
@@ -15,6 +17,7 @@ const navItems = [
   { name: 'Exams', icon: FileText, path: '/dashboard/exams' },
   { name: 'Create exam', mobileName: 'Create', icon: PlusCircle, path: '/dashboard/exams/create' },
   { name: 'Results', icon: BarChart3, path: '/dashboard/results' },
+  { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
 ]
 
 export default function DashboardLayout({ children }) {
@@ -30,10 +33,7 @@ export default function DashboardLayout({ children }) {
     }
 
     let isCurrent = true
-
-    Promise.resolve().then(() => {
-      if (!isCurrent) return
-
+    const loadOrganization = async () => {
       const token = localStorage.getItem('fastExToken')
       const userData = localStorage.getItem('fastExUser')
 
@@ -42,18 +42,43 @@ export default function DashboardLayout({ children }) {
         return
       }
 
+      let cachedOrganization
       try {
-        setUser(JSON.parse(userData))
+        cachedOrganization = JSON.parse(userData)
       } catch (error) {
         console.error('Failed to parse dashboard user:', error)
         router.replace('/dashboard/login')
-      } finally {
         setLoading(false)
+        return
       }
-    })
+
+      if (!isCurrent) return
+      setUser(cachedOrganization)
+
+      try {
+        const response = await api.get('/auth/profile')
+        if (!isCurrent) return
+        setUser(response.data.organization)
+        localStorage.setItem('fastExUser', JSON.stringify(response.data.organization))
+      } catch (error) {
+        console.error('Failed to load organization profile:', error)
+      } finally {
+        if (isCurrent) setLoading(false)
+      }
+    }
+
+    const handleOrganizationUpdate = (event) => {
+      if (!event.detail) return
+      setUser(event.detail)
+      localStorage.setItem('fastExUser', JSON.stringify(event.detail))
+    }
+
+    window.addEventListener('fast-ex-organization-updated', handleOrganizationUpdate)
+    loadOrganization()
 
     return () => {
       isCurrent = false
+      window.removeEventListener('fast-ex-organization-updated', handleOrganizationUpdate)
     }
   }, [isLoginPage, pathname, router])
 
@@ -80,6 +105,7 @@ export default function DashboardLayout({ children }) {
     <WorkspaceShell
       workspaceLabel="Organization workspace"
       userName={user.name || 'Organization admin'}
+      userLogo={user.logo}
       navItems={navItems}
       onLogout={handleLogout}
     >

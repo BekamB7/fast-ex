@@ -935,6 +935,34 @@ textarea:focus-visible {
   gap: 1rem;
 }
 
+.workspace-user-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.workspace-user-avatar {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 2.25rem;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid #dfe9e1;
+  border-radius: 50%;
+  background: #edf5ef;
+  color: var(--color-primary-dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.workspace-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .workspace-user-name {
   max-width: 15rem;
   overflow: hidden;
@@ -965,6 +993,169 @@ textarea:focus-visible {
   border-color: #b8d5c1;
   background: #f4faf5;
   color: var(--color-primary-dark);
+}
+
+.settings-page {
+  width: min(100%, 900px);
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.settings-page-header,
+.settings-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-page-header {
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.settings-page-icon {
+  display: grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  flex: 0 0 2.8rem;
+  place-items: center;
+  border-radius: 0.9rem;
+  background: #edf5ef;
+  color: var(--color-primary);
+}
+
+.settings-page-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 750;
+}
+
+.settings-page-header p,
+.settings-section-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted-foreground);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.settings-card {
+  margin-bottom: 1rem;
+  padding: 1.35rem;
+}
+
+.settings-section-heading {
+  margin-bottom: 1.2rem;
+}
+
+.settings-section-heading h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.settings-section-heading > svg {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+
+.settings-portal-url {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.settings-portal-url a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-primary-dark);
+  font-weight: 650;
+}
+
+.settings-portal-url .btn-secondary {
+  display: inline-flex;
+  min-height: 2.5rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #dfe8e0;
+  border-radius: 0.7rem;
+  background: white;
+  color: #435249;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.settings-inline-message,
+.settings-help-text {
+  margin: 0.7rem 0 0;
+  color: var(--color-muted-foreground);
+  font-size: 0.82rem;
+}
+
+.settings-form {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+}
+
+.settings-form-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.settings-form .field {
+  min-width: 0;
+}
+
+.settings-color-control {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.65rem;
+  color: #526057;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.settings-color-control input {
+  width: 2.75rem;
+  height: 2.5rem;
+  padding: 0.2rem;
+  border: 1px solid #dfe8e0;
+  border-radius: 0.6rem;
+  background: white;
+  cursor: pointer;
+}
+
+.settings-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid;
+  border-radius: 0.7rem;
+  font-size: 0.88rem;
+}
+
+.settings-message.is-success {
+  border-color: #b7dfc7;
+  background: #effaf2;
+  color: #087f5b;
+}
+
+.settings-message.is-error {
+  border-color: #f0c4c0;
+  background: #fff4f2;
+  color: var(--color-destructive);
 }
 
 .workspace-body {
@@ -1799,6 +1990,23 @@ textarea:focus-visible {
 
   .workspace-user-name {
     display: none;
+  }
+
+  .settings-page {
+    padding: 1rem;
+  }
+
+  .settings-card {
+    padding: 1rem;
+  }
+
+  .settings-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-portal-url {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

@@ -30,11 +30,13 @@ export default function GetGoing() {
       if (response.data) {
         // Registration successful, redirect to login or dashboard
         alert("Registration successful! Please login to continue.");
-        router.push("/dashboard");
+        router.push("/dashboard/login");
       }
     } catch (err) {
       setError(
-        err.response?.data?.error || "Registration failed. Please try again.",
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Registration failed. Please try again.",
       );
     } finally {
       setLoading(false);

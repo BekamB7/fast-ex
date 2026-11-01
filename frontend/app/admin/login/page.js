@@ -40,7 +40,11 @@ export default function PlatformLogin() {
         }, 100)
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed')
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Login failed. Please try again.',
+      )
     } finally {
       setLoading(false)
     }
@@ -160,18 +164,14 @@ export default function PlatformLogin() {
             </button>
           </form>
 
-          <div style={{
-            marginTop: '1.5rem',
-            padding: '0.75rem',
-            background: 'var(--color-secondary)',
-            borderRadius: '0.5rem',
-            fontSize: '0.75rem',
-            color: 'var(--color-muted-foreground)'
+          <p style={{
+            marginTop: '1.25rem',
+            color: 'var(--color-muted-foreground)',
+            fontSize: '0.78rem',
+            textAlign: 'center',
           }}>
-            <p style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Default Credentials:</p>
-            <p>Email: super@fast-ex.com</p>
-            <p>Password: SuperAdmin123!</p>
-          </div>
+            Sign in with the platform administrator credentials configured by your system owner.
+          </p>
         </div>
       </motion.div>
     </div>

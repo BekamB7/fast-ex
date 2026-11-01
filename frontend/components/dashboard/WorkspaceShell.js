@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { GraduationCap, LogOut } from 'lucide-react'
 
@@ -8,6 +9,7 @@ export default function WorkspaceShell({
   children,
   workspaceLabel,
   userName,
+  userLogo,
   navItems,
   onLogout,
 }) {
@@ -31,7 +33,16 @@ export default function WorkspaceShell({
             </span>
           </Link>
           <div className="workspace-header-actions">
-            <span className="workspace-user-name">{userName}</span>
+            <div className="workspace-user-identity">
+              <span className="workspace-user-avatar" aria-hidden="true">
+                {userLogo ? (
+                  <Image src={userLogo} alt="" width={36} height={36} unoptimized />
+                ) : (
+                  userName?.trim().charAt(0).toUpperCase() || 'O'
+                )}
+              </span>
+              <span className="workspace-user-name">{userName}</span>
+            </div>
             <button className="workspace-logout" type="button" onClick={onLogout}>
               <LogOut aria-hidden="true" size={16} />
               <span>Sign out</span>
