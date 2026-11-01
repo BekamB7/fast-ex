@@ -1,5 +1,6 @@
 // src/controllers/organization-public.controller.js
 import { prisma } from '../utils/db.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 import { z } from 'zod'
 
 const validateCodeSchema = z.object({
@@ -13,7 +14,7 @@ export async function getOrganizationBySlug(req, res) {
     const { slug } = req.params
 
     const organization = await prisma.organization.findUnique({
-      where: { slug: slug },
+      where: { slug: slug, isActive: true },
       include: {
         exams: {
           where: { isActive: true },
@@ -28,6 +29,7 @@ export async function getOrganizationBySlug(req, res) {
             timeLimitMinutes: true,
             passingScore: true,
             isActive: true,
+            _count: { select: { attempts: true } },
           },
           orderBy: { createdAt: 'desc' },
         },
@@ -62,6 +64,7 @@ export async function getOrganizationBySlug(req, res) {
 
   } catch (error) {
     console.error('Get organization error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -72,7 +75,7 @@ export async function getOrganizationExamsPublic(req, res) {
     const { batchYear, language, search } = req.query
 
     const organization = await prisma.organization.findUnique({
-      where: { slug: slug },
+      where: { slug: slug, isActive: true },
     })
 
     if (!organization) {
@@ -136,6 +139,7 @@ export async function getOrganizationExamsPublic(req, res) {
 
   } catch (error) {
     console.error('Get public exams error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -146,7 +150,7 @@ export async function validateExamCodePublic(req, res) {
     const { examCode, batchYear, language } = validateCodeSchema.parse(req.body)
 
     const organization = await prisma.organization.findUnique({
-      where: { slug: slug },
+      where: { slug: slug, isActive: true },
     })
 
     if (!organization) {
@@ -215,6 +219,7 @@ export async function validateExamCodePublic(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }

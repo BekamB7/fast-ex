@@ -1,5 +1,6 @@
 // src/controllers/organization.controller.js
 import { prisma } from '../utils/db.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 
 export async function getDashboardStats(req, res) {
   try {
@@ -36,6 +37,7 @@ export async function getDashboardStats(req, res) {
           select: {
             title: true,
             examCode: true,
+            passingScore: true,
           },
         },
       },
@@ -54,6 +56,7 @@ export async function getDashboardStats(req, res) {
     
   } catch (error) {
     console.error('Dashboard stats error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -67,6 +70,7 @@ export async function getResults(req, res) {
       exam: {
         organizationId: organizationId,
       },
+      submittedAt: { not: null },
     }
     
     if (examId) {
@@ -81,6 +85,7 @@ export async function getResults(req, res) {
             title: true,
             examCode: true,
             totalQuestions: true,
+            passingScore: true,
           },
         },
       },
@@ -95,9 +100,10 @@ export async function getResults(req, res) {
         studentEmail: result.studentEmail,
         examTitle: result.exam.title,
         examCode: result.exam.examCode,
+        passingScore: result.exam.passingScore,
         score: result.score,
         totalQuestions: result.totalQuestions,
-        percentage: result.percentage,
+        percentage: Number(result.percentage),
         status: result.status,
         submittedAt: result.submittedAt,
       })),
@@ -105,6 +111,7 @@ export async function getResults(req, res) {
     
   } catch (error) {
     console.error('Get results error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }

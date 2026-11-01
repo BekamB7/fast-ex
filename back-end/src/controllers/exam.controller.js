@@ -1,9 +1,11 @@
 // src/controllers/exam.controller.js
+import { randomBytes } from 'node:crypto'
 import { prisma } from '../utils/db.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 import { z } from 'zod'
 
 const questionSchema = z.object({
-  questionNumber: z.number().min(1).max(30),
+  questionNumber: z.number().int().min(1).max(30),
   questionText: z.string().min(1),
   questionType: z.enum(['mcq', 'truefalse', 'fillblank']),
   optionA: z.string().optional(),
@@ -11,18 +13,21 @@ const questionSchema = z.object({
   optionC: z.string().optional(),
   optionD: z.string().optional(),
   correctAnswer: z.string().min(1),
-  marks: z.number().default(1),
+  marks: z.number().int().min(1).default(1),
 })
 
 const examCreateSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().optional(),
-  batchYear: z.number().min(2000).max(2100),
+  batchYear: z.number().int().min(2000).max(2100),
   language: z.string().min(2).max(50),
-  timeLimitMinutes: z.number().default(30),
-  totalQuestions: z.number().default(30),
-  passingScore: z.number().default(15),
+  timeLimitMinutes: z.number().int().min(1).max(600).default(30),
+  totalQuestions: z.number().int().min(1).max(30).default(30),
+  passingScore: z.number().int().min(0).default(15),
   questions: z.array(questionSchema).min(1).max(30),
+}).refine((exam) => exam.totalQuestions === exam.questions.length, {
+  path: ['totalQuestions'],
+  message: 'totalQuestions must match the number of questions provided',
 })
 
 export async function createExam(req, res) {
@@ -33,21 +38,26 @@ export async function createExam(req, res) {
     const validated = examCreateSchema.parse(req.body)
     
     // Generate unique exam code
-    const examCode = generateExamCode(
+    const baseExamCode = generateExamCode(
       validated.batchYear,
       validated.language,
       organizationId
     )
+    let examCode = baseExamCode
     
-    // Check if exam code already exists
-    const existing = await prisma.exam.findUnique({
-      where: { examCode }
-    })
-    
-    if (existing) {
-      // Regenerate with random suffix
-      const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase()
-      validated.examCode = `${examCode}-${randomSuffix}`
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const existing = await prisma.exam.findUnique({ where: { examCode } })
+      if (!existing) break
+
+      const suffix = randomBytes(2).toString('hex').toUpperCase()
+      examCode = `${baseExamCode}-${suffix}`
+
+      if (attempt === 4) {
+        const finalCheck = await prisma.exam.findUnique({ where: { examCode } })
+        if (finalCheck) {
+          throw new Error('Unable to generate a unique exam code')
+        }
+      }
     }
     
     // Create exam with questions in a transaction
@@ -102,7 +112,7 @@ export async function createExam(req, res) {
     return res.status(201).json({
       message: 'Exam created successfully',
       exam: examWithQuestions,
-      examCode: examCode,
+      examCode,
     })
     
   } catch (error) {
@@ -114,6 +124,7 @@ export async function createExam(req, res) {
         details: error.errors,
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
     
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -168,6 +179,7 @@ export async function getOrganizationExams(req, res) {
     
   } catch (error) {
     console.error('Get exams error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -209,6 +221,7 @@ export async function getExamById(req, res) {
     
   } catch (error) {
     console.error('Get exam error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -216,7 +229,7 @@ export async function getExamById(req, res) {
 export async function updateExamStatus(req, res) {
   try {
     const { id } = req.params
-    const { isActive } = req.body
+    const { isActive } = z.object({ isActive: z.boolean() }).parse(req.body)
     const organizationId = req.organization.id
     
     const exam = await prisma.exam.findFirst({
@@ -242,6 +255,13 @@ export async function updateExamStatus(req, res) {
     
   } catch (error) {
     console.error('Update exam error:', error)
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        details: error.errors,
+      })
+    }
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }

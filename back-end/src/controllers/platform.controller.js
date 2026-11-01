@@ -2,8 +2,10 @@
 import { prisma } from '../utils/db.js'
 import { 
   comparePassword, 
-  generatePlatformToken 
+  generatePlatformToken,
+  hashPassword,
 } from '../utils/auth.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 import { z } from 'zod'
 
 const loginSchema = z.object({
@@ -62,6 +64,7 @@ export async function platformLogin(req, res) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid input', details: error.errors })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -74,6 +77,7 @@ export async function platformLogout(req, res) {
     return res.json({ message: 'Logout successful' })
   } catch (error) {
     console.error('Logout error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -90,6 +94,7 @@ export async function platformProfile(req, res) {
     })
   } catch (error) {
     console.error('Profile error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -159,10 +164,14 @@ export async function getPlatformStats(req, res) {
         submittedAttempts,
       },
       recentOrganizations,
-      recentAttempts,
+      recentAttempts: recentAttempts.map((attempt) => ({
+        ...attempt,
+        percentage: Number(attempt.percentage),
+      })),
     })
   } catch (error) {
     console.error('Platform stats error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -190,7 +199,17 @@ export async function getAllOrganizations(req, res) {
     const organizations = await prisma.organization.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        adminEmail: true,
+        phone: true,
+        address: true,
+        logo: true,
+        primaryColor: true,
+        isActive: true,
+        createdAt: true,
         _count: { select: { exams: true } },
       },
     })
@@ -207,6 +226,7 @@ export async function getAllOrganizations(req, res) {
     return res.json({ organizations: orgsWithAttempts })
   } catch (error) {
     console.error('Get organizations error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -217,13 +237,33 @@ export async function getOrganizationById(req, res) {
 
     const organization = await prisma.organization.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        adminEmail: true,
+        phone: true,
+        address: true,
+        logo: true,
+        primaryColor: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
         exams: {
           orderBy: { createdAt: 'desc' },
-          include: {
-            _count: {
-              select: { attempts: true, questions: true },
-            },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            examCode: true,
+            batchYear: true,
+            language: true,
+            totalQuestions: true,
+            passingScore: true,
+            timeLimitMinutes: true,
+            isActive: true,
+            createdAt: true,
+            _count: { select: { attempts: true, questions: true } },
           },
         },
       },
@@ -257,7 +297,10 @@ export async function getOrganizationById(req, res) {
 
     return res.json({
       organization,
-      attempts,
+      attempts: attempts.map((attempt) => ({
+        ...attempt,
+        percentage: Number(attempt.percentage),
+      })),
       stats: {
         totalExams: organization.exams.length,
         totalAttempts,
@@ -268,6 +311,7 @@ export async function getOrganizationById(req, res) {
     })
   } catch (error) {
     console.error('Get organization error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -275,7 +319,7 @@ export async function getOrganizationById(req, res) {
 export async function toggleOrganizationStatus(req, res) {
   try {
     const { id } = req.params
-    const { isActive } = req.body
+    const { isActive } = z.object({ isActive: z.boolean() }).parse(req.body)
 
     const organization = await prisma.organization.findUnique({ where: { id } })
 
@@ -298,6 +342,10 @@ export async function toggleOrganizationStatus(req, res) {
     })
   } catch (error) {
     console.error('Toggle org error:', error)
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid input', details: error.errors })
+    }
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -336,6 +384,7 @@ export async function getAllExams(req, res) {
     return res.json({ exams })
   } catch (error) {
     console.error('Get all exams error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -347,6 +396,10 @@ export async function getAllExams(req, res) {
 export async function getAllAttempts(req, res) {
   try {
     const { search, limit = 50 } = req.query
+    const parsedLimit = Number.parseInt(String(limit), 10)
+    const take = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 200)
+      : 50
 
     const whereClause = {
       submittedAt: { not: null },
@@ -362,7 +415,7 @@ export async function getAllAttempts(req, res) {
     const attempts = await prisma.studentAttempt.findMany({
       where: whereClause,
       orderBy: { submittedAt: 'desc' },
-      take: parseInt(limit),
+      take,
       include: {
         exam: {
           select: {
@@ -377,16 +430,18 @@ export async function getAllAttempts(req, res) {
       },
     })
 
-    return res.json({ attempts })
+    return res.json({
+      attempts: attempts.map((attempt) => ({
+        ...attempt,
+        percentage: Number(attempt.percentage),
+      })),
+    })
   } catch (error) {
     console.error('Get all attempts error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
-
-// Add these at the end of platform.controller.js
-
-import { hashPassword } from '../utils/auth.js'
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).max(100).optional(),
@@ -434,6 +489,7 @@ export async function updatePlatformProfile(req, res) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid input', details: error.errors })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -473,6 +529,7 @@ export async function changePlatformPassword(req, res) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid input', details: error.errors })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -514,9 +571,18 @@ export async function getExamById(req, res) {
       return res.status(404).json({ error: 'Exam not found' })
     }
 
-    return res.json({ exam })
+    return res.json({
+      exam: {
+        ...exam,
+        attempts: exam.attempts.map((attempt) => ({
+          ...attempt,
+          percentage: Number(attempt.percentage),
+        })),
+      },
+    })
   } catch (error) {
     console.error('Get exam error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -546,9 +612,15 @@ export async function getAttemptById(req, res) {
       return res.status(404).json({ error: 'Attempt not found' })
     }
 
-    return res.json({ attempt })
+    return res.json({
+      attempt: {
+        ...attempt,
+        percentage: Number(attempt.percentage),
+      },
+    })
   } catch (error) {
     console.error('Get attempt error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }

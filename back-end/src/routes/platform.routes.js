@@ -32,7 +32,7 @@ router.patch('/organizations/:id/status', authenticatePlatform, toggleOrganizati
 router.get('/exams', authenticatePlatform, getAllExams)
 router.get('/attempts', authenticatePlatform, getAllAttempts)
 router.put('/profile', authenticatePlatform, updatePlatformProfile)
-router.post('/password', authenticatePlatform, changePlatformPassword)
+router.put('/password', authenticatePlatform, changePlatformPassword)
 router.get('/exams/:id', authenticatePlatform, getExamById)
 router.get('/attempts/:id', authenticatePlatform, getAttemptById)
 export default router

@@ -1,6 +1,7 @@
 // src/middleware/platform-auth.middleware.js
 import { verifyToken } from '../utils/auth.js'
 import { prisma } from '../utils/db.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 
 export async function authenticatePlatform(req, res, next) {
   try {
@@ -41,6 +42,7 @@ export async function authenticatePlatform(req, res, next) {
     next()
   } catch (error) {
     console.error('Platform auth error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }

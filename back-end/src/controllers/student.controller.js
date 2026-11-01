@@ -1,5 +1,6 @@
 // src/controllers/student.controller.js
 import { prisma } from '../utils/db.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 import { z } from 'zod'
 
 // ============================================
@@ -88,6 +89,7 @@ export async function validateExamCode(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -113,7 +115,7 @@ export async function startExam(req, res) {
     // If slug is provided, filter by organization
     if (slug) {
       const organization = await prisma.organization.findUnique({
-        where: { slug: slug },
+        where: { slug: slug, isActive: true },
       })
 
       if (!organization) {
@@ -172,7 +174,7 @@ export async function startExam(req, res) {
           id: existingAttempt.id,
           score: existingAttempt.score,
           totalQuestions: existingAttempt.totalQuestions,
-          percentage: existingAttempt.percentage,
+          percentage: Number(existingAttempt.percentage),
           status: existingAttempt.status,
           submittedAt: existingAttempt.submittedAt,
         },
@@ -263,6 +265,7 @@ export async function startExam(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -390,6 +393,7 @@ export async function submitExam(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -427,6 +431,12 @@ export async function getStudentResult(req, res) {
       return res.status(404).json({ error: 'Attempt not found' })
     }
 
+    if (attempt.status !== 'submitted') {
+      return res.status(409).json({
+        error: 'Result is not available until the exam is submitted',
+      })
+    }
+
     const passed = attempt.score >= attempt.exam.passingScore
 
     return res.json({
@@ -441,7 +451,7 @@ export async function getStudentResult(req, res) {
         organizationSlug: attempt.exam.organization.slug,
         score: attempt.score,
         totalQuestions: attempt.totalQuestions,
-        percentage: attempt.percentage,
+        percentage: Number(attempt.percentage),
         passingScore: attempt.exam.passingScore,
         passed: passed,
         status: attempt.status,
@@ -452,6 +462,7 @@ export async function getStudentResult(req, res) {
 
   } catch (error) {
     console.error('Get result error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
