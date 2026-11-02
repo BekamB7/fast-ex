@@ -17,6 +17,7 @@ import {
   Globe
 } from 'lucide-react'
 import api from '@/lib/api'
+import { notifyToast } from '@/components/ui/feedback'
 
 const emptyQuestion = {
   questionNumber: 1,
@@ -62,7 +63,7 @@ export default function CreateExamPage() {
   // Remove question
   const removeQuestion = (index) => {
     if (questions.length === 1) {
-      alert('You need at least one question')
+      notifyToast('An exam must have at least one question.', 'warning')
       return
     }
     const newQuestions = questions.filter((_, i) => i !== index)
@@ -315,7 +316,7 @@ export default function CreateExamPage() {
                     }
                   }}
                   min="1"
-                  max="50"
+                  max="30"
                   required
                 />
               </div>

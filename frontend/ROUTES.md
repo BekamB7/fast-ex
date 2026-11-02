@@ -47,6 +47,7 @@ the workspace redirects users without an organization session to that page.
 | `/dashboard` | Dashboard | Organization overview and recent attempts. |
 | `/dashboard/exams` | Exams | View and manage the organization's exams. |
 | `/dashboard/exams/create` | Create exam | Create an exam and its questions. |
+| `/dashboard/exams/<id>/edit` | Edit exam | Update an exam; questions are locked after a student attempt has started. |
 | `/dashboard/results` | Results | Review and export student results. |
 | `/dashboard/results?examId=<exam-id>` | Filtered results | Open results with a particular exam preselected. |
 | `/dashboard/settings` | Organization settings | Update organization details and branding, copy the public portal URL, or change the administrator password. |

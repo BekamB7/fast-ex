@@ -22,8 +22,10 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import api from '@/lib/api'
+import { notifyToast, useConfirm } from '@/components/ui/feedback'
 
 export default function OrganizationDetailsPage() {
+  const confirm = useConfirm()
   const params = useParams()
   const router = useRouter()
   const orgId = params.id
@@ -51,7 +53,13 @@ export default function OrganizationDetailsPage() {
 
   const toggleStatus = async () => {
     const org = data.organization
-    if (!confirm(`Are you sure you want to ${org.isActive ? 'deactivate' : 'activate'} this organization?`)) {
+    const action = org.isActive ? 'deactivate' : 'activate'
+    if (!await confirm({
+      title: `${action[0].toUpperCase()}${action.slice(1)} organization?`,
+      description: `Are you sure you want to ${action} this organization?`,
+      confirmLabel: `${action[0].toUpperCase()}${action.slice(1)} organization`,
+      danger: org.isActive,
+    })) {
       return
     }
 
@@ -64,9 +72,10 @@ export default function OrganizationDetailsPage() {
         ...data,
         organization: { ...org, isActive: !org.isActive },
       })
+      notifyToast(`Organization ${action}d successfully.`, 'success')
     } catch (err) {
       console.error('Failed to toggle status:', err)
-      alert('Failed to update organization status')
+      notifyToast(err.response?.data?.error || 'Failed to update organization status.', 'error')
     }
   }
 

@@ -14,9 +14,12 @@ import {
   CheckCircle2,
   XCircle,
   FileText,
-  ChevronDown
+  ChevronDown,
+  PhoneCall,
+  ShieldAlert,
 } from 'lucide-react'
 import api from '@/lib/api'
+import { notifyToast } from '@/components/ui/feedback'
 
 function ResultsContent() {
   const searchParams = useSearchParams()
@@ -24,9 +27,13 @@ function ResultsContent() {
 
   const [loading, setLoading] = useState(true)
   const [results, setResults] = useState([])
+  const [blockedAttempts, setBlockedAttempts] = useState([])
   const [exams, setExams] = useState([])
   const [selectedExam, setSelectedExam] = useState(initialExamId)
   const [search, setSearch] = useState('')
+  const [viewType, setViewType] = useState('results')
+  const [studentLookup, setStudentLookup] = useState(null)
+  const [lookingUpStudent, setLookingUpStudent] = useState(false)
   const [exporting, setExporting] = useState(false)
 
   // Fetch results and exams
@@ -42,6 +49,7 @@ function ResultsContent() {
         // Fetch results
         const resultsRes = await api.get('/organization/results')
         setResults(resultsRes.data.results || [])
+        setBlockedAttempts(resultsRes.data.blockedAttempts || [])
       } catch (err) {
         console.error('Failed to load results:', err)
       } finally {
@@ -52,10 +60,24 @@ function ResultsContent() {
     fetchData()
   }, [])
 
+  const filteredBlockedAttempts = blockedAttempts.filter((attempt) => {
+    if (selectedExam !== 'all' && attempt.examId !== selectedExam) {
+      return false
+    }
+    if (!search) return true
+    const query = search.toLowerCase()
+    return (
+      attempt.studentName?.toLowerCase().includes(query) ||
+      attempt.studentPhone?.toLowerCase().includes(query) ||
+      attempt.matchedStudentName?.toLowerCase().includes(query) ||
+      attempt.examTitle?.toLowerCase().includes(query)
+    )
+  })
+
   // Filter results
   const filteredResults = results.filter(result => {
     // Filter by exam
-    if (selectedExam !== 'all' && result.examCode !== selectedExam) {
+    if (selectedExam !== 'all' && result.examId !== selectedExam) {
       return false
     }
 
@@ -72,6 +94,25 @@ function ResultsContent() {
 
     return true
   })
+
+  const lookupStudent = async () => {
+    if (!search.trim()) {
+      notifyToast('Enter the student phone number to search.', 'warning')
+      return
+    }
+    setLookingUpStudent(true)
+    try {
+      const response = await api.get('/organization/students/lookup', {
+        params: { phone: search.trim() },
+      })
+      setStudentLookup(response.data)
+    } catch (error) {
+      notifyToast(error.response?.data?.error || 'Could not look up that phone number.', 'error')
+      setStudentLookup(null)
+    } finally {
+      setLookingUpStudent(false)
+    }
+  }
 
   // Calculate stats
   const stats = {
@@ -105,7 +146,7 @@ function ResultsContent() {
       doc.setTextColor(100, 100, 100)
       const examName = selectedExam === 'all' 
         ? 'All Exams' 
-        : exams.find(e => e.examCode === selectedExam)?.title || selectedExam
+        : exams.find(e => e.id === selectedExam)?.title || selectedExam
       doc.text(`Exam: ${examName}`, 14, 30)
       doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 36)
       doc.text(`Total Results: ${filteredResults.length}`, 14, 42)
@@ -184,12 +225,12 @@ function ResultsContent() {
       // Save
       const fileName = selectedExam === 'all' 
         ? `fast-ex-results-${Date.now()}.pdf`
-        : `fast-ex-${selectedExam}-results.pdf`
+        : `fast-ex-${exams.find((exam) => exam.id === selectedExam)?.examCode || selectedExam}-results.pdf`
       
       doc.save(fileName)
     } catch (err) {
       console.error('PDF export failed:', err)
-      alert('Failed to export PDF')
+      notifyToast('Failed to export PDF.', 'error')
     } finally {
       setExporting(false)
     }
@@ -266,7 +307,7 @@ function ResultsContent() {
       doc.save(`result-${result.studentName.replace(/\s+/g, '-')}-${result.examCode}.pdf`)
     } catch (err) {
       console.error('PDF export failed:', err)
-      alert('Failed to export PDF')
+      notifyToast('Failed to export PDF.', 'error')
     }
   }
 
@@ -308,11 +349,11 @@ function ResultsContent() {
         </div>
         <button
           onClick={exportToPDF}
-          disabled={exporting || filteredResults.length === 0}
+          disabled={exporting || filteredResults.length === 0 || viewType === 'blocked'}
           className="btn-primary"
           style={{ 
-            opacity: (exporting || filteredResults.length === 0) ? 0.5 : 1,
-            cursor: (exporting || filteredResults.length === 0) ? 'not-allowed' : 'pointer'
+            opacity: (exporting || filteredResults.length === 0 || viewType === 'blocked') ? 0.5 : 1,
+            cursor: (exporting || filteredResults.length === 0 || viewType === 'blocked') ? 'not-allowed' : 'pointer'
           }}
         >
           <Download style={{ width: '1rem', height: '1rem' }} />
@@ -382,7 +423,7 @@ function ResultsContent() {
       <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
           gap: '0.75rem' 
         }}>
           <div style={{ position: 'relative' }}>
@@ -400,9 +441,22 @@ function ResultsContent() {
               className="field-control with-icon"
               placeholder="Search by name, phone..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setStudentLookup(null)
+              }}
             />
           </div>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={lookingUpStudent}
+            onClick={lookupStudent}
+          >
+            <PhoneCall aria-hidden="true" size={16} />
+            {lookingUpStudent ? 'Searching…' : 'Lookup phone'}
+          </button>
 
           <div style={{ position: 'relative' }}>
             <Filter style={{ 
@@ -423,7 +477,7 @@ function ResultsContent() {
             >
               <option value="all">All Exams</option>
               {exams.map(exam => (
-                <option key={exam.id} value={exam.examCode}>
+                <option key={exam.id} value={exam.id}>
                   {exam.title} ({exam.examCode})
                 </option>
               ))}
@@ -439,11 +493,73 @@ function ResultsContent() {
               pointerEvents: 'none'
             }} />
           </div>
+          <label className="field results-view-filter">
+            Show
+            <select className="field-control" value={viewType} onChange={(event) => setViewType(event.target.value)}>
+              <option value="results">Completed results</option>
+              <option value="blocked">Blocked duplicate attempts ({blockedAttempts.length})</option>
+            </select>
+          </label>
         </div>
       </div>
 
+      {studentLookup && (
+        <section className="card student-lookup-card">
+          <h2>Phone lookup: {studentLookup.phone}</h2>
+          <p>All recorded attempts and blocked starts for this phone number, across your exams.</p>
+          {studentLookup.attempts.length === 0 && studentLookup.blockedAttempts.length === 0 ? (
+            <p>No attempts or blocked starts found for this phone number.</p>
+          ) : (
+            <div className="student-lookup-list">
+              {studentLookup.attempts.map((attempt) => (
+                <article className="student-lookup-row" key={`attempt-${attempt.id}`}>
+                  <div>
+                    <strong>{attempt.studentName}</strong>
+                    <span>{attempt.examTitle} · {attempt.examCode}</span>
+                  </div>
+                  <span>{attempt.status === 'in_progress' ? 'In progress' : attempt.status === 'timeout' ? 'Timed out' : `${attempt.score}/${attempt.totalQuestions} · ${attempt.percentage}%`}</span>
+                  <time>{new Date(attempt.submittedAt || attempt.startedAt).toLocaleDateString()}</time>
+                </article>
+              ))}
+              {studentLookup.blockedAttempts.map((attempt) => (
+                <article className="student-lookup-row is-blocked" key={`blocked-${attempt.id}`}>
+                  <div>
+                    <strong>{attempt.studentName} · blocked</strong>
+                    <span>{attempt.examTitle} · {attempt.examCode}</span>
+                  </div>
+                  <span>{attempt.reason === 'phone_name_conflict' ? `Phone matches ${attempt.matchedStudentName}` : 'Duplicate attempt'}</span>
+                  <time>{new Date(attempt.createdAt).toLocaleDateString()}</time>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Results Table */}
-      {filteredResults.length === 0 ? (
+      {viewType === 'blocked' ? (
+        filteredBlockedAttempts.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+            <ShieldAlert style={{ width: '3rem', height: '3rem', color: 'var(--color-muted-foreground)', margin: '0 auto 1rem' }} />
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>No blocked attempts found</h3>
+            <p style={{ color: 'var(--color-muted-foreground)' }}>Duplicate starts and phone/name conflicts will appear here.</p>
+          </div>
+        ) : (
+          <div className="card blocked-attempts-list">
+            <h2>Blocked duplicate attempts ({filteredBlockedAttempts.length})</h2>
+            {filteredBlockedAttempts.map((attempt) => (
+              <article className="student-lookup-row is-blocked" key={attempt.id}>
+                <div>
+                  <strong>{attempt.studentName} · {attempt.studentPhone}</strong>
+                  <span>{attempt.examTitle} · {attempt.examCode}</span>
+                </div>
+                <span>{attempt.reason === 'phone_name_conflict' ? `Phone belongs to ${attempt.matchedStudentName}` : 'Student already completed this exam'}</span>
+                <time>{new Date(attempt.createdAt).toLocaleString()}</time>
+              </article>
+            ))}
+          </div>
+        )
+      ) : filteredResults.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
           <FileText style={{ width: '3rem', height: '3rem', color: 'var(--color-muted-foreground)', margin: '0 auto 1rem' }} />
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>

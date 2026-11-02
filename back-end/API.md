@@ -101,7 +101,8 @@ separate.
 | PUT | `/api/auth/profile` | Organization | Update `name`, `adminEmail`, `phone`, `address`, `logo`, or `primaryColor`; returns `{ organization }` |
 | PUT | `/api/auth/password` | Organization | `{ currentPassword, newPassword }`; changes the password and invalidates other organization sessions |
 | GET | `/api/organization/dashboard` | Organization | `{ stats, recentAttempts }` |
-| GET | `/api/organization/results?examId=<uuid>` | Organization | `{ results }`; `examId` is optional |
+| GET | `/api/organization/results?examId=<uuid>` | Organization | `{ results, blockedAttempts }`; `examId` is optional |
+| GET | `/api/organization/students/lookup?phone=<phone>` | Organization | All matching exam attempts and blocked starts for a phone number |
 
 Registration creates the organization but does not log it in; sign in at
 `/dashboard/login` after registration.
@@ -113,6 +114,7 @@ Registration creates the organization but does not log it in; sign in at
 | POST | `/api/exam/create` | Organization | Exam fields and `questions[]` → `{ exam, examCode }` |
 | GET | `/api/exam/organization` | Organization | `{ exams }` for the signed-in organization |
 | GET | `/api/exam/:id` | Organization | `{ exam }`, including questions and attempts |
+| PUT | `/api/exam/:id` | Organization | Update exam details; include `questions[]` to replace questions before any attempts exist (question editing is locked after an attempt starts) |
 | PATCH | `/api/exam/:id/status` | Organization | `{ isActive: boolean }` → `{ exam }` |
 
 Exam creation fields: `title`, `description?`, `batchYear`, `language`,
@@ -133,7 +135,13 @@ and optional `marks`.
 | GET | `/api/public/:slug/exam/result/:attemptId` | No | `{ attempt }` |
 
 The public exam start response intentionally omits correct answers. Use an
-active organization slug and exam code.
+active organization slug and exam code. Student phone numbers are normalized
+before saving. Repeated starts for an in-progress attempt resume it; completed
+duplicate starts and phone/name conflicts are recorded in
+`blocked_exam_attempts` for review in the organization workspace.
+
+Apply the `add_blocked_exam_attempts` migration with `npm run prisma:deploy`
+before starting the updated backend.
 
 ### Platform administration
 

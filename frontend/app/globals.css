@@ -419,6 +419,84 @@ body {
   transform: translateY(-2px);
 }
 
+.btn-secondary,
+.btn-danger {
+  display: inline-flex;
+  min-height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: white;
+  color: var(--color-foreground);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.btn-secondary:hover {
+  border-color: #b8d5c1;
+  background: #f4faf5;
+}
+
+.btn-danger {
+  border-color: #b42318;
+  background: #b42318;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #912018;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.confirm-dialog {
+  width: min(100%, 28rem);
+  max-width: calc(100vw - 2rem);
+  margin: auto;
+  padding: 1.5rem;
+  border: 1px solid #e4e9e5;
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 24px 80px rgba(13, 35, 22, 0.24);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(15, 23, 18, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.confirm-dialog h2 {
+  margin: 0;
+  color: #18251c;
+  font-size: 1.15rem;
+  font-weight: 750;
+}
+
+.confirm-dialog p {
+  margin: 0.6rem 0 1.4rem;
+  color: #647168;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
 /* ==========================================================
    CARDS
    ========================================================== */
@@ -1156,6 +1234,165 @@ textarea:focus-visible {
   border-color: #f0c4c0;
   background: #fff4f2;
   color: var(--color-destructive);
+}
+
+.edit-exam-page {
+  width: min(100%, 1050px);
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.edit-exam-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  color: var(--color-muted-foreground);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.edit-exam-header {
+  margin-bottom: 1.25rem;
+}
+
+.edit-exam-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 750;
+}
+
+.edit-exam-header p,
+.edit-exam-questions-heading p {
+  margin: 0.35rem 0;
+  color: var(--color-muted-foreground);
+  font-size: 0.88rem;
+}
+
+.edit-exam-code {
+  color: var(--color-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.edit-exam-form {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
+.edit-exam-card {
+  width: 100%;
+  padding: 1.25rem;
+}
+
+.edit-exam-card > h2,
+.edit-exam-questions-heading h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.edit-exam-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.edit-exam-questions-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.edit-question-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.edit-question-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.85rem;
+  background: var(--color-secondary);
+}
+
+.edit-question-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-primary);
+}
+
+.edit-question-delete {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 0;
+  border-radius: 0.6rem;
+  background: #fff2f0;
+  color: var(--color-destructive);
+  cursor: pointer;
+}
+
+.student-lookup-card,
+.blocked-attempts-list {
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.student-lookup-card h2,
+.blocked-attempts-list h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.student-lookup-card > p {
+  margin: 0 0 0.85rem;
+  color: var(--color-muted-foreground);
+  font-size: 0.85rem;
+}
+
+.student-lookup-list {
+  display: grid;
+}
+
+.student-lookup-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.82rem;
+}
+
+.student-lookup-row > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.student-lookup-row > div span,
+.student-lookup-row time {
+  color: var(--color-muted-foreground);
+}
+
+.student-lookup-row.is-blocked {
+  color: #a1261c;
+}
+
+.results-view-filter {
+  min-width: 0;
+}
+
+.results-view-filter .field-control {
+  min-width: 13rem;
 }
 
 .workspace-body {
@@ -1990,6 +2227,28 @@ textarea:focus-visible {
 
   .workspace-user-name {
     display: none;
+  }
+
+  .edit-exam-page {
+    padding: 1rem;
+  }
+
+  .edit-exam-grid,
+  .student-lookup-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .edit-exam-questions-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .confirm-dialog-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-dialog-actions > button {
+    width: 100%;
   }
 
   .settings-page {

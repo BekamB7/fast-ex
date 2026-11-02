@@ -15,9 +15,11 @@ import {
   Power,
   PowerOff,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Pencil,
 } from 'lucide-react'
 import api from '@/lib/api'
+import { notifyToast } from '@/components/ui/feedback'
 
 export default function ExamsPage() {
   const [loading, setLoading] = useState(true)
@@ -64,7 +66,7 @@ export default function ExamsPage() {
       ))
     } catch (err) {
       console.error('Failed to toggle exam:', err)
-      alert('Failed to update exam status')
+      notifyToast(err.response?.data?.error || 'Failed to update exam status.', 'error')
     }
   }
 
@@ -312,6 +314,26 @@ export default function ExamsPage() {
                 paddingTop: '1rem',
                 borderTop: '1px solid var(--color-border)'
               }}>
+                <Link
+                  href={`/dashboard/exams/${exam.id}/edit`}
+                  className="btn-secondary"
+                  aria-label={`Edit ${exam.title}`}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.25rem'
+                  }}
+                >
+                  <Pencil style={{ width: '0.875rem', height: '0.875rem' }} />
+                  Edit
+                </Link>
                 <Link
                   href={`/dashboard/results?examId=${exam.id}`}
                   style={{

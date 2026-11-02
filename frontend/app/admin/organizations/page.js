@@ -18,32 +18,40 @@ import {
   Eye,
 } from 'lucide-react'
 import api from '@/lib/api'
+import { notifyToast, useConfirm } from '@/components/ui/feedback'
 
 export default function OrganizationsPage() {
+  const confirm = useConfirm()
   const [loading, setLoading] = useState(true)
   const [organizations, setOrganizations] = useState([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        setLoading(true)
+        const res = await api.get('/platform/organizations')
+        setOrganizations(res.data.organizations || [])
+      } catch (err) {
+        console.error('Failed to load organizations:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchOrganizations()
   }, [])
 
-  const fetchOrganizations = async () => {
-    try {
-      setLoading(true)
-      const res = await api.get('/platform/organizations')
-      setOrganizations(res.data.organizations || [])
-    } catch (err) {
-      console.error('Failed to load organizations:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // Toggle organization status
   const toggleStatus = async (orgId, currentStatus) => {
-    if (!confirm(`Are you sure you want to ${currentStatus ? 'deactivate' : 'activate'} this organization?`)) {
+    const action = currentStatus ? 'deactivate' : 'activate'
+    if (!await confirm({
+      title: `${action[0].toUpperCase()}${action.slice(1)} organization?`,
+      description: `Are you sure you want to ${action} this organization?`,
+      confirmLabel: `${action[0].toUpperCase()}${action.slice(1)} organization`,
+      danger: currentStatus,
+    })) {
       return
     }
 
@@ -57,9 +65,10 @@ export default function OrganizationsPage() {
           o.id === orgId ? { ...o, isActive: !currentStatus } : o
         )
       )
+      notifyToast(`Organization ${action}d successfully.`, 'success')
     } catch (err) {
       console.error('Failed to toggle status:', err)
-      alert('Failed to update organization status')
+      notifyToast(err.response?.data?.error || 'Failed to update organization status.', 'error')
     }
   }
 

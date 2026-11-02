@@ -1,7 +1,7 @@
 // frontend/app/[slug]/exam/[code]/page.js
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -18,10 +18,12 @@ import {
   ChevronLeft
 } from 'lucide-react'
 import api from '@/lib/api'
+import { useConfirm } from '@/components/ui/feedback'
 
 export default function ExamPage() {
   const params = useParams()
   const router = useRouter()
+  const confirm = useConfirm()
   const { slug, code } = params
 
   const [currentStep, setCurrentStep] = useState(1)
@@ -67,23 +69,6 @@ export default function ExamPage() {
     }
   }, [slug, code])
 
-  // Timer effect
-  useEffect(() => {
-    if (currentStep === 4 && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer)
-            handleAutoSubmit()
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-      return () => clearInterval(timer)
-    }
-  }, [currentStep, timeLeft])
-
   // Save state to localStorage
   useEffect(() => {
     if (attemptId && currentStep === 4) {
@@ -112,12 +97,19 @@ export default function ExamPage() {
       setError('Please enter your phone number')
       return
     }
+    const phone = studentInfo.studentPhone.trim()
+    const phoneDigits = phone.replace(/\D/g, '')
+    if (!/^\+?[0-9\s().-]+$/.test(phone) || phoneDigits.length < 7 || phoneDigits.length > 15) {
+      setError('Enter a valid phone number with 7 to 15 digits.')
+      return
+    }
 
     // Start exam
     try {
       const res = await api.post(`/public/${slug}/exam/start`, {
         examCode: code,
         ...studentInfo,
+        studentPhone: `${phone.startsWith('+') ? '+' : ''}${phoneDigits}`,
       })
 
       if (res.data.attemptId) {
@@ -147,7 +139,7 @@ export default function ExamPage() {
   }
 
   // Handle submit
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     try {
       const res = await api.post(`/public/${slug}/exam/submit`, {
         attemptId,
@@ -163,12 +155,29 @@ export default function ExamPage() {
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to submit exam')
     }
-  }
+  }, [attemptId, answers, code, router, slug])
 
   // Handle auto submit (timeout)
-  const handleAutoSubmit = () => {
+  const handleAutoSubmit = useCallback(() => {
     handleSubmit()
-  }
+  }, [handleSubmit])
+
+  // Timer effect
+  useEffect(() => {
+    if (currentStep === 4 && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            handleAutoSubmit()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [currentStep, timeLeft, handleAutoSubmit])
 
   // Format time
   const formatTime = (seconds) => {
@@ -444,6 +453,10 @@ export default function ExamPage() {
                         className="field-control with-icon"
                         placeholder="0912345678"
                         value={studentInfo.studentPhone}
+                        pattern="\+?[0-9\s().-]+"
+                        minLength={7}
+                        maxLength={24}
+                        title="Enter a phone number containing 7 to 15 digits"
                         onChange={(e) => setStudentInfo({ ...studentInfo, studentPhone: e.target.value })}
                         required
                       />
@@ -743,12 +756,16 @@ export default function ExamPage() {
                   </button>
                   <button
                     className="btn-primary"
-                    onClick={() => {
+                    onClick={async () => {
                       if (currentQuestion < questions.length - 1) {
                         setCurrentQuestion((prev) => prev + 1)
                       } else {
-                        if (window.confirm('Submit your exam? You cannot change answers after submission.')) {
-                          handleSubmit()
+                        if (await confirm({
+                          title: 'Submit your exam?',
+                          description: 'You cannot change your answers after submitting.',
+                          confirmLabel: 'Submit exam',
+                        })) {
+                          await handleSubmit()
                         }
                       }
                     }}

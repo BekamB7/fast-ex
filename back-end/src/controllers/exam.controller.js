@@ -16,19 +16,32 @@ const questionSchema = z.object({
   marks: z.number().int().min(1).default(1),
 })
 
-const examCreateSchema = z.object({
+const examFieldsSchema = z.object({
   title: z.string().min(3).max(200),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   batchYear: z.number().int().min(2000).max(2100),
   language: z.string().min(2).max(50),
   timeLimitMinutes: z.number().int().min(1).max(600).default(30),
   totalQuestions: z.number().int().min(1).max(30).default(30),
   passingScore: z.number().int().min(0).default(15),
+})
+
+const examCreateSchema = examFieldsSchema.extend({
   questions: z.array(questionSchema).min(1).max(30),
 }).refine((exam) => exam.totalQuestions === exam.questions.length, {
   path: ['totalQuestions'],
   message: 'totalQuestions must match the number of questions provided',
 })
+
+const examUpdateSchema = examFieldsSchema.partial().extend({
+  questions: z.array(questionSchema).min(1).max(30).optional(),
+}).refine(
+  (exam) => !exam.questions || exam.totalQuestions === exam.questions.length,
+  {
+    path: ['totalQuestions'],
+    message: 'totalQuestions must match the number of questions provided',
+  },
+)
 
 export async function createExam(req, res) {
   try {
@@ -260,6 +273,66 @@ export async function updateExamStatus(req, res) {
         error: 'Invalid input',
         details: error.errors,
       })
+    }
+    if (respondWithDatabaseUnavailable(res, error)) return
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+export async function updateExam(req, res) {
+  try {
+    const { id } = req.params
+    const organizationId = req.organization.id
+    const validated = examUpdateSchema.parse(req.body)
+    const { questions, ...examFields } = validated
+
+    const exam = await prisma.exam.findFirst({
+      where: { id, organizationId },
+      include: { _count: { select: { attempts: true } } },
+    })
+
+    if (!exam) {
+      return res.status(404).json({ error: 'Exam not found' })
+    }
+
+    if (questions && exam._count.attempts > 0) {
+      return res.status(409).json({
+        error: 'Questions cannot be edited after students have started this exam.',
+      })
+    }
+
+    const updateData = {
+      ...examFields,
+      ...(questions ? { totalQuestions: examFields.totalQuestions ?? questions.length } : {}),
+    }
+
+    const updatedExam = await prisma.$transaction(async (tx) => {
+      await tx.exam.update({
+        where: { id },
+        data: updateData,
+      })
+
+      if (questions) {
+        await tx.question.deleteMany({ where: { examId: id } })
+        await tx.question.createMany({
+          data: questions.map((question) => ({
+            ...question,
+            examId: id,
+          })),
+        })
+      }
+
+      return tx.exam.findUnique({
+        where: { id },
+        include: { questions: { orderBy: { questionNumber: 'asc' } } },
+      })
+    })
+
+    return res.json({ message: 'Exam updated successfully', exam: updatedExam })
+  } catch (error) {
+    console.error('Update exam error:', error)
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid input', details: error.errors })
     }
     if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })

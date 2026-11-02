@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { notifyToast } from "@/components/ui/feedback";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -14,8 +15,7 @@ export default function Contact() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission (will integrate with API later)
-    alert("Message sent! We'll get back to you soon.");
+    notifyToast("The contact form is not connected yet.", "info");
   };
 
   return (

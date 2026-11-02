@@ -16,6 +16,7 @@ import {
   Eye,
 } from 'lucide-react'
 import api from '@/lib/api'
+import { notifyToast } from '@/components/ui/feedback'
 
 export default function GlobalAttemptsPage() {
   const [loading, setLoading] = useState(true)
@@ -132,7 +133,7 @@ export default function GlobalAttemptsPage() {
       doc.save(`fast-ex-attempts-${Date.now()}.pdf`)
     } catch (err) {
       console.error(err)
-      alert('Failed to export')
+      notifyToast('Failed to export attempts.', 'error')
     } finally {
       setExporting(false)
     }

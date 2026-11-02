@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Building2, Mail, Lock, Phone, MapPin } from "lucide-react";
 import api from "@/lib/api";
+import { notifyToast } from "@/components/ui/feedback";
 
 export default function GetGoing() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function GetGoing() {
 
       if (response.data) {
         // Registration successful, redirect to login or dashboard
-        alert("Registration successful! Please login to continue.");
+        notifyToast("Organization registered. Please sign in to continue.", "success");
         router.push("/dashboard/login");
       }
     } catch (err) {
