@@ -57,6 +57,7 @@ model Exam {
 
   questions        Question[]
   attempts         StudentAttempt[]
+  blockedAttempts  BlockedExamAttempt[]
 
   @@map("exams")
 }
@@ -111,6 +112,46 @@ model StudentAttempt {
 
   @@unique([examId, studentPhone, studentName])
   @@map("student_attempts")
+}
+
+model BlockedExamAttempt {
+  id                 String   @id @default(uuid()) @db.Char(36)
+  examId             String   @db.Char(36)
+  exam               Exam     @relation(fields: [examId], references: [id])
+  studentName        String   @db.VarChar(100)
+  studentPhone       String   @db.VarChar(20)
+  matchedStudentName String   @db.VarChar(100)
+  reason             String   @db.VarChar(40)
+  createdAt          DateTime @default(now())
+
+  @@index([examId, createdAt])
+  @@index([studentPhone])
+  @@map("blocked_exam_attempts")
+}
+
+model PlatformAdmin {
+  id           String   @id @default(uuid()) @db.Char(36)
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(100)
+  password     String   @db.VarChar(255)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     PlatformSession[]
+
+  @@map("platform_admins")
+}
+
+model PlatformSession {
+  id              String   @id @default(uuid()) @db.Char(36)
+  platformAdminId String   @db.Char(36)
+  platformAdmin   PlatformAdmin @relation(fields: [platformAdminId], references: [id])
+  token           String   @unique @db.VarChar(500)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@map("platform_sessions")
 }
 
 enum AttemptStatus {

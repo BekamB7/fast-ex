@@ -1,6 +1,8 @@
 // src/controllers/auth.controller.js
+import { randomBytes } from 'node:crypto'
 import { prisma } from '../utils/db.js'
 import { hashPassword, comparePassword, generateToken } from '../utils/auth.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 import { z } from 'zod'
 
 // ============================================
@@ -18,6 +20,20 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   adminEmail: z.string().email(),
   password: z.string().min(6),
+})
+
+const updateOrganizationProfileSchema = z.object({
+  name: z.string().trim().min(2).max(100).optional(),
+  adminEmail: z.string().email().max(100).optional(),
+  phone: z.string().trim().max(20).nullable().optional(),
+  address: z.string().trim().max(5000).nullable().optional(),
+  logo: z.string().url().max(2048).nullable().optional(),
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
+})
+
+const changeOrganizationPasswordSchema = z.object({
+  currentPassword: z.string().min(6),
+  newPassword: z.string().min(6),
 })
 
 // ============================================
@@ -45,11 +61,35 @@ export async function register(req, res) {
     }
 
     // Generate slug from name (for URL: /abc-university)
-    const slug = validated.name
+    const baseSlug = validated.name
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '')
+      .slice(0, 50)
+      .replace(/-+$/g, '') || 'organization'
+    let slug = baseSlug
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const existingSlug = await prisma.organization.findUnique({
+        where: { slug },
+        select: { id: true },
+      })
+      if (!existingSlug) break
+
+      const suffix = randomBytes(2).toString('hex')
+      slug = `${baseSlug.slice(0, 44)}-${suffix}`
+    }
+
+    const finalSlugCheck = await prisma.organization.findUnique({
+      where: { slug },
+      select: { id: true },
+    })
+    if (finalSlugCheck) {
+      return res.status(409).json({
+        error: 'Could not create a unique organization URL. Please try again.',
+      })
+    }
 
     // Hash password
     const hashedPassword = await hashPassword(validated.password)
@@ -84,6 +124,7 @@ export async function register(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -104,6 +145,10 @@ export async function login(req, res) {
 
     if (!organization) {
       return res.status(401).json({ error: 'Invalid credentials' })
+    }
+
+    if (!organization.isActive) {
+      return res.status(403).json({ error: 'Organization is inactive' })
     }
 
     // Verify password
@@ -147,6 +192,7 @@ export async function login(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -166,6 +212,7 @@ export async function logout(req, res) {
     return res.json({ message: 'Logout successful' })
   } catch (error) {
     console.error('Logout error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -207,6 +254,86 @@ export async function getProfile(req, res) {
     })
   } catch (error) {
     console.error('Profile error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+export async function updateOrganizationProfile(req, res) {
+  try {
+    const validated = updateOrganizationProfileSchema.parse(req.body)
+    const organization = await prisma.organization.update({
+      where: { id: req.organization.id },
+      data: validated,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        adminEmail: true,
+        phone: true,
+        address: true,
+        logo: true,
+        primaryColor: true,
+        isActive: true,
+      },
+    })
+
+    return res.json({
+      message: 'Organization profile updated successfully',
+      organization,
+    })
+  } catch (error) {
+    console.error('Update organization profile error:', error)
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid input', details: error.errors })
+    }
+    if (error?.code === 'P2002') {
+      return res.status(409).json({ error: 'Organization name or email is already in use' })
+    }
+    if (respondWithDatabaseUnavailable(res, error)) return
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+export async function changeOrganizationPassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = changeOrganizationPasswordSchema.parse(req.body)
+    const organization = await prisma.organization.findUnique({
+      where: { id: req.organization.id },
+      select: { adminPassword: true },
+    })
+
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' })
+    }
+
+    const isValid = await comparePassword(currentPassword, organization.adminPassword)
+    if (!isValid) {
+      return res.status(400).json({ error: 'Current password is incorrect' })
+    }
+
+    const hashedPassword = await hashPassword(newPassword)
+
+    await prisma.$transaction([
+      prisma.organization.update({
+        where: { id: req.organization.id },
+        data: { adminPassword: hashedPassword },
+      }),
+      prisma.session.deleteMany({
+        where: {
+          organizationId: req.organization.id,
+          id: { not: req.session.id },
+        },
+      }),
+    ])
+
+    return res.json({ message: 'Password changed successfully' })
+  } catch (error) {
+    console.error('Change organization password error:', error)
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid input', details: error.errors })
+    }
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }

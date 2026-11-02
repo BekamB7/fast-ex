@@ -1,5 +1,6 @@
 // src/controllers/student.controller.js
 import { prisma } from '../utils/db.js'
+import { respondWithDatabaseUnavailable } from '../utils/errors.js'
 import { z } from 'zod'
 
 // ============================================
@@ -10,11 +11,27 @@ const validateCodeSchema = z.object({
   examCode: z.string().min(3).max(20),
 })
 
+function normalizePhone(phone) {
+  const hasPlus = phone.trim().startsWith('+')
+  const digits = phone.replace(/\D/g, '')
+  return `${hasPlus ? '+' : ''}${digits}`
+}
+
 const startExamSchema = z.object({
   examCode: z.string().min(3).max(20),
-  studentName: z.string().min(2).max(100),
-  studentPhone: z.string().min(10).max(20),
-  studentEmail: z.string().email().optional(),
+  studentName: z.string().trim().min(2).max(100),
+  studentPhone: z.string()
+    .trim()
+    .regex(/^\+?[0-9\s().-]+$/, 'Enter a valid phone number')
+    .transform(normalizePhone)
+    .refine((phone) => {
+      const digits = phone.replace(/\D/g, '')
+      return digits.length >= 7 && digits.length <= 15
+    }, 'Phone number must contain 7 to 15 digits'),
+  studentEmail: z.preprocess(
+    (email) => email === '' ? undefined : email,
+    z.string().email().optional(),
+  ),
 })
 
 const submitExamSchema = z.object({
@@ -88,6 +105,7 @@ export async function validateExamCode(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -113,7 +131,7 @@ export async function startExam(req, res) {
     // If slug is provided, filter by organization
     if (slug) {
       const organization = await prisma.organization.findUnique({
-        where: { slug: slug },
+        where: { slug: slug, isActive: true },
       })
 
       if (!organization) {
@@ -153,41 +171,67 @@ export async function startExam(req, res) {
       return res.status(404).json({ error: 'Exam not found' })
     }
 
-    // Check if student already took this exam (prevent re-exam)
-    const existingAttempt = await prisma.studentAttempt.findFirst({
+    const examAttempts = await prisma.studentAttempt.findMany({
       where: {
         examId: exam.id,
-        studentPhone: validated.studentPhone,
-        studentName: validated.studentName,
-        status: {
-          in: ['submitted', 'timeout'],
-        },
       },
+      select: { id: true, studentName: true, studentPhone: true, status: true, score: true, totalQuestions: true, percentage: true, submittedAt: true, startedAt: true, answersJson: true, studentEmail: true },
     })
 
-    if (existingAttempt) {
+    const normalizedPhone = normalizePhone(validated.studentPhone)
+    const matchingPhone = examAttempts.filter(
+      (attempt) => normalizePhone(attempt.studentPhone) === normalizedPhone,
+    )
+    const matchingName = (name) =>
+      name.trim().replace(/\s+/g, ' ').toLocaleLowerCase() ===
+      validated.studentName.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+    const sameStudentAttempt = matchingPhone.find((attempt) => matchingName(attempt.studentName))
+    const phoneConflict = matchingPhone.find((attempt) => !matchingName(attempt.studentName))
+
+    if (phoneConflict) {
+      const message = `This phone number is already registered to ${phoneConflict.studentName}. Contact your organization if this is incorrect.`
+      await prisma.blockedExamAttempt.create({
+        data: {
+          examId: exam.id,
+          studentName: validated.studentName.trim(),
+          studentPhone: normalizedPhone,
+          matchedStudentName: phoneConflict.studentName,
+          reason: 'phone_name_conflict',
+        },
+      })
+      return res.status(409).json({
+        error: message,
+        reason: 'phone_name_conflict',
+      })
+    }
+
+    if (sameStudentAttempt && ['submitted', 'timeout'].includes(sameStudentAttempt.status)) {
+      await prisma.blockedExamAttempt.create({
+        data: {
+          examId: exam.id,
+          studentName: validated.studentName.trim(),
+          studentPhone: normalizedPhone,
+          matchedStudentName: sameStudentAttempt.studentName,
+          reason: 'duplicate_attempt',
+        },
+      })
       return res.status(403).json({
         error: 'You have already taken this exam.',
         attempt: {
-          id: existingAttempt.id,
-          score: existingAttempt.score,
-          totalQuestions: existingAttempt.totalQuestions,
-          percentage: existingAttempt.percentage,
-          status: existingAttempt.status,
-          submittedAt: existingAttempt.submittedAt,
+          id: sameStudentAttempt.id,
+          score: sameStudentAttempt.score,
+          totalQuestions: sameStudentAttempt.totalQuestions,
+          percentage: Number(sameStudentAttempt.percentage),
+          status: sameStudentAttempt.status,
+          submittedAt: sameStudentAttempt.submittedAt,
         },
       })
     }
 
     // Check if there's an in-progress attempt (resume)
-    const inProgressAttempt = await prisma.studentAttempt.findFirst({
-      where: {
-        examId: exam.id,
-        studentPhone: validated.studentPhone,
-        studentName: validated.studentName,
-        status: 'in_progress',
-      },
-    })
+    const inProgressAttempt = sameStudentAttempt?.status === 'in_progress'
+      ? sameStudentAttempt
+      : null
 
     if (inProgressAttempt) {
       return res.json({
@@ -263,6 +307,7 @@ export async function startExam(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -390,6 +435,7 @@ export async function submitExam(req, res) {
         details: error.errors 
       })
     }
+    if (respondWithDatabaseUnavailable(res, error)) return
 
     return res.status(500).json({ error: 'Internal server error' })
   }
@@ -427,6 +473,12 @@ export async function getStudentResult(req, res) {
       return res.status(404).json({ error: 'Attempt not found' })
     }
 
+    if (attempt.status !== 'submitted') {
+      return res.status(409).json({
+        error: 'Result is not available until the exam is submitted',
+      })
+    }
+
     const passed = attempt.score >= attempt.exam.passingScore
 
     return res.json({
@@ -441,7 +493,7 @@ export async function getStudentResult(req, res) {
         organizationSlug: attempt.exam.organization.slug,
         score: attempt.score,
         totalQuestions: attempt.totalQuestions,
-        percentage: attempt.percentage,
+        percentage: Number(attempt.percentage),
         passingScore: attempt.exam.passingScore,
         passed: passed,
         status: attempt.status,
@@ -452,6 +504,7 @@ export async function getStudentResult(req, res) {
 
   } catch (error) {
     console.error('Get result error:', error)
+    if (respondWithDatabaseUnavailable(res, error)) return
     return res.status(500).json({ error: 'Internal server error' })
   }
 }

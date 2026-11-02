@@ -6,6 +6,7 @@ import {
   getOrganizationExams,
   getExamById,
   updateExamStatus,
+  updateExam,
 } from '../controllers/exam.controller.js'
 
 const router = express.Router()
@@ -13,6 +14,7 @@ const router = express.Router()
 // Protected routes (require authentication)
 router.post('/create', authenticate, createExam)
 router.get('/organization', authenticate, getOrganizationExams)
+router.put('/:id', authenticate, updateExam)
 router.get('/:id', authenticate, getExamById)
 router.patch('/:id/status', authenticate, updateExamStatus)
 
