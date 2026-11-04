@@ -15,14 +15,20 @@ import platformRoutes from './routes/platform.routes.js'
 
 const app = express()
 
-app.use(helmet())
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_PRODUCTION,
+]
+  .filter(Boolean)
+  .flatMap((origins) => origins.split(','))
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
 app.use(cors({
-  origin: (process.env.FRONTEND_URL || 'http://localhost:3000')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  origin: allowedOrigins.length > 0 ? allowedOrigins : 'http://localhost:3000',
   credentials: true
 }))
+app.use(helmet())
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))

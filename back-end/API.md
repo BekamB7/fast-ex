@@ -5,7 +5,9 @@ is `GET /api`, API documentation is `GET /api/docs`, and database readiness is
 reported by `GET /api/health`.
 
 The frontend uses `http://localhost:5000/api` by default. Set
-`NEXT_PUBLIC_API_URL` in `frontend/.env.local` when the API is hosted elsewhere.
+`NEXT_PUBLIC_API_URL` in the frontend deployment environment when the API is
+hosted elsewhere. The value may be the backend origin or its `/api` URL; the
+frontend ensures the `/api` path is present.
 All request and response bodies use JSON. Protected routes use
 `Authorization: Bearer <token>`.
 
