@@ -1,5 +1,26 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Development and production
+
+Copy `.env.example` to `.env.local` for local development and set
+`NEXT_PUBLIC_API_URL` to the local backend, normally
+`http://localhost:5000/api`. The API URL is public browser configuration; never
+put credentials or secrets in a `NEXT_PUBLIC_*` variable.
+
+On Vercel, configure `NEXT_PUBLIC_API_URL` separately for the **Preview** and
+**Production** environments. Preview builds should point to the development
+backend, while Production builds should point to the stable production backend.
+Changing this value requires a new frontend deployment. `NEXT_PRODUCTION_API_URL`
+is not exposed to browser code; use `NEXT_PUBLIC_API_URL` in the relevant Vercel
+environment instead. The backend must include each frontend origin in
+`FRONTEND_URL` (development) or `FRONTEND_URL_PRODUCTION` (production); separate
+multiple origins with commas.
+
+Use `dev` as the integration branch and `main` for production. Open pull requests
+into either branch and wait for the GitHub Actions CI workflow to pass before
+merging. Promote a change by merging `dev` into `main`; configure the hosting
+provider to deploy `dev` as Preview and `main` as Production.
+
 ## Getting Started
 
 First, run the development server:

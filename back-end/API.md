@@ -7,7 +7,10 @@ reported by `GET /api/health`.
 The frontend uses `http://localhost:5000/api` by default. Set
 `NEXT_PUBLIC_API_URL` in the frontend deployment environment when the API is
 hosted elsewhere. The value may be the backend origin or its `/api` URL; the
-frontend ensures the `/api` path is present.
+frontend ensures the `/api` path is present. For Vercel, set this variable
+separately in Preview and Production so each frontend build uses its matching
+backend. Local `.env.local` values are not automatically available to deployed
+builds. CORS frontend origins may include trailing slashes.
 All request and response bodies use JSON. Protected routes use
 `Authorization: Bearer <token>`.
 
