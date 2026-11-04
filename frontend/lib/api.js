@@ -1,7 +1,12 @@
 // frontend/lib/api.js
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL 
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim()
+  || 'http://localhost:5000/api'
+const normalizedApiUrl = configuredApiUrl.replace(/\/+$/, '')
+const API_URL = /\/api$/i.test(normalizedApiUrl)
+  ? normalizedApiUrl
+  : `${normalizedApiUrl}/api`
 
 const api = axios.create({
   baseURL: API_URL,

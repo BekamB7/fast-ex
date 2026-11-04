@@ -50,7 +50,10 @@ export default function OrganizationSettingsPage() {
         console.error('Failed to load organization settings:', error)
         setProfileMessage({
           type: 'error',
-          text: error.response?.data?.error || 'Could not load organization settings.',
+          text: error.response?.data?.error
+            || (!error.response
+              ? 'Could not reach the API. Check the deployed API URL and backend CORS settings.'
+              : 'Could not load organization settings.'),
         })
       } finally {
         setLoading(false)
