@@ -22,6 +22,7 @@ const allowedOrigins = [
   .filter(Boolean)
   .flatMap((origins) => origins.split(','))
   .map((origin) => origin.trim())
+  .map((origin) => origin.replace(/\/+$/, ''))
   .filter(Boolean)
 
 app.use(cors({

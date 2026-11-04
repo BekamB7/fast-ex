@@ -52,7 +52,7 @@ export default function OrganizationSettingsPage() {
           type: 'error',
           text: error.response?.data?.error
             || (!error.response
-              ? 'Could not reach the API. Check the deployed API URL and backend CORS settings.'
+              ? `Could not reach the API${error.config?.baseURL ? ` at ${error.config.baseURL}` : ''}. ${error.message || 'Check the deployed API URL and backend CORS settings.'}`
               : 'Could not load organization settings.'),
         })
       } finally {
