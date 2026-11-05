@@ -1,4 +1,5 @@
 // frontend/lib/api.js
+// frontend/lib/api.js
 import axios from 'axios'
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim()
@@ -10,8 +11,13 @@ const API_URL = /\/api$/i.test(normalizedApiUrl)
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': '1', // <--- ADD THIS LINE
+  },
 })
+
+// ... rest of your file stays exactly the same
 
 // Add token to requests (checks platform vs org token based on URL)
 api.interceptors.request.use((config) => {
