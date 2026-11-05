@@ -18,6 +18,7 @@ const app = express()
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL_PRODUCTION,
+  process.env.TUNNEL_URL,
 ]
   .filter(Boolean)
   .flatMap((origins) => origins.split(','))
@@ -26,7 +27,7 @@ const allowedOrigins = [
   .filter(Boolean)
 
 app.use(cors({
-  origin: allowedOrigins.length > 0 ? allowedOrigins : 'http://localhost:3000',
+  origin: allowedOrigins.length > 0 ? allowedOrigins : 'https://fast-ex-three.vercel.app',
   credentials: true
 }))
 app.use(helmet())
