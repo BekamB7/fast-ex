@@ -12,7 +12,8 @@ and platform administration pages require their respective sign-ins.
 | `/` | Landing page | Fast-Ex introduction and links to learn more or register an organization. |
 | `/about` | About | Information about the platform. |
 | `/contact` | Contact | Contact information and message form. |
-| `/get-going` | Organization registration | Register an organization; after registration, continue to `/dashboard/login`. |
+| `/get-going` | Organization registration | Register an organization; after registration, continue to `/login`. |
+| `/login` | Organization sign-in | Sign in to an organization's workspace. |
 
 ## Student exam pages
 
@@ -43,7 +44,7 @@ the workspace redirects users without an organization session to that page.
 
 | Route | Page | What it is for |
 | --- | --- | --- |
-| `/dashboard/login` | Organization sign-in | Sign in to an organization's workspace. |
+| `/dashboard/login` | Organization sign-in | Compatibility route for organization sign-in; use `/login` for the public entry point. |
 | `/dashboard` | Dashboard | Organization overview and recent attempts. |
 | `/dashboard/exams` | Exams | View and manage the organization's exams. |
 | `/dashboard/exams/create` | Create exam | Create an exam and its questions. |

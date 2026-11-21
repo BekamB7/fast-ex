@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Info, Phone, Rocket } from 'lucide-react'
+import { Home, Info, Phone, Rocket, LogIn } from 'lucide-react'
 
 const navItems = [
   { name: 'Home', icon: Home, path: '/' },
   { name: 'About', icon: Info, path: '/about' },
   { name: 'Contact', icon: Phone, path: '/contact' },
   { name: 'Get started', icon: Rocket, path: '/get-going' },
+  { name: 'Sign in', icon: LogIn, path: '/login' },
 ]
 
 export function MobileBottomNav() {
@@ -19,7 +20,7 @@ export function MobileBottomNav() {
   }
 
   return (
-    <nav className="public-mobile-nav" aria-label="Primary navigation">
+    <nav className="public-mobile-nav" aria-label="Mobile site navigation">
       {navItems.map(({ name, icon: Icon, path }) => {
         const isActive = pathname === path
 

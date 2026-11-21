@@ -1,138 +1,95 @@
-// frontend/app/about/page.js
-"use client";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Clock3,
+  GraduationCap,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
-import { motion } from "framer-motion";
-import { GraduationCap, Shield, Zap, Users, Award, Clock } from "lucide-react";
+const principles = [
+  {
+    icon: ShieldCheck,
+    title: "Secure by design",
+    description:
+      "Keep assessments organized with unique access codes and a focused exam experience.",
+  },
+  {
+    icon: Clock3,
+    title: "Less time on grading",
+    description:
+      "Review submissions and results in one place, with objective questions graded automatically.",
+  },
+  {
+    icon: Users,
+    title: "Built for organizations",
+    description:
+      "Give learners a dedicated exam portal that feels clear, familiar, and easy to use.",
+  },
+];
+
+export const metadata = {
+  title: "About Fast-Ex",
+  description:
+    "Learn about Fast-Ex, a thoughtful platform for creating, delivering, and reviewing online exams.",
+};
 
 export default function About() {
   return (
-    <div className="container py-8 md:py-16">
-      {/* ============================================
-          HEADER
-          ============================================ */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="page-intro mb-12 md:mb-16"
-      >
+    <div className="container about-page py-8 md:py-16">
+      <header className="about-hero">
         <p className="eyebrow">The Fast-Ex standard</p>
-        <h1 className="text-4xl font-bold gradient-text md:text-5xl lg:text-6xl mt-3 mb-4">
-          About Fast-Ex
-        </h1>
-        <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto">
-          Empowering organizations to conduct secure and efficient online exams.
+        <h1 className="gradient-text">Assessment, with clarity.</h1>
+        <p>
+          Fast-Ex helps organizations create, deliver, and review online exams
+          in one thoughtful workspace, while giving learners a focused place to
+          take them.
         </p>
-      </motion.div>
+      </header>
 
-      {/* ============================================
-          MISSION SECTION
-          ============================================ */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="card text-center mb-12 md:mb-16 p-8 md:p-12"
-      >
-        <p className="section-label justify-center">Our mission</p>
-        <h2 className="mt-4 mb-4 text-3xl md:text-4xl font-semibold text-primary">
-          Make testing feel human.
-        </h2>
-        <p className="mx-auto max-w-3xl text-base md:text-lg leading-relaxed text-slate-600">
-          To provide a fast, secure, and beautiful exam platform that makes
-          online testing accessible and efficient for organizations and students
-          alike.
-        </p>
-      </motion.div>
-
-      {/* ============================================
-          FEATURES GRID
-          ============================================ */}
-      <div className="stagger-grid mb-12 md:mb-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="card text-center p-8"
-        >
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
-            <Shield className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="font-semibold text-xl mb-3">Secure</h3>
-          <p className="text-sm leading-relaxed text-slate-600">
-            Exam codes and student verification ensure only authorized
-            participants.
+      <section className="about-mission" aria-labelledby="about-mission-title">
+        <div className="about-mission-icon" aria-hidden="true">
+          <GraduationCap />
+        </div>
+        <div>
+          <p className="section-label">Our mission</p>
+          <h2 id="about-mission-title">Make testing feel human.</h2>
+          <p>
+            Online assessment should be straightforward for the people who
+            organize it and clear for the people who take it. We bring the
+            essential exam workflow together so teams can focus on learning,
+            not busywork.
           </p>
-        </motion.div>
+        </div>
+      </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="card text-center p-8"
-        >
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fff4d9]">
-            <Zap className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="font-semibold text-xl mb-3">Fast</h3>
-          <p className="text-sm leading-relaxed text-slate-600">
-            Instant auto-grading and real-time results for immediate feedback.
-          </p>
-        </motion.div>
+      <section className="about-principles" aria-labelledby="about-principles-title">
+        <div className="about-section-heading">
+          <p className="section-label">What matters to us</p>
+          <h2 id="about-principles-title">A calmer way to run exams.</h2>
+        </div>
+        <div className="about-principle-grid">
+          {principles.map(({ icon: Icon, title, description }) => (
+            <article className="about-principle-card" key={title}>
+              <span className="about-principle-icon">
+                <Icon aria-hidden="true" />
+              </span>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="card text-center p-8"
-        >
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e8eef9]">
-            <Users className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="font-semibold text-xl mb-3">SaaS Ready</h3>
-          <p className="text-sm leading-relaxed text-slate-600">
-            Each organization gets its own branded exam portal.
-          </p>
-        </motion.div>
-      </div>
-
-      {/* ============================================
-          STATS SECTION
-          ============================================ */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="card text-center p-8"
-        >
-          <Award className="w-12 h-12 text-primary mx-auto mb-3" />
-          <p className="text-4xl font-bold text-primary">100%</p>
-          <p className="text-sm text-slate-600 mt-1">Secure Exams</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="card text-center p-8"
-        >
-          <Clock className="w-12 h-12 text-primary mx-auto mb-3" />
-          <p className="text-4xl font-bold text-primary">Instant</p>
-          <p className="text-sm text-slate-600 mt-1">Auto-Grading</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="card text-center p-8"
-        >
-          <GraduationCap className="w-12 h-12 text-primary mx-auto mb-3" />
-          <p className="text-4xl font-bold text-primary">Any Scale</p>
-          <p className="text-sm text-slate-600 mt-1">For Any Organization</p>
-        </motion.div>
-      </div>
+      <section className="about-cta" aria-labelledby="about-cta-title">
+        <div>
+          <p className="section-label">Ready when you are</p>
+          <h2 id="about-cta-title">Bring your next exam into focus.</h2>
+        </div>
+        <Link href="/get-going" className="landing-button landing-button-primary">
+          Get started <ArrowRight aria-hidden="true" size={17} />
+        </Link>
+      </section>
     </div>
   );
 }

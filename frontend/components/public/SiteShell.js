@@ -30,12 +30,15 @@ export default function SiteShell({ children }) {
         </Link>
 
         <div className="site-desktop-navigation hidden items-center gap-8">
-          <nav aria-label="Primary navigation" className="flex items-center gap-1">
+          <nav aria-label="Main site navigation" className="flex items-center gap-1">
             <Link href="/" className="desktop-nav-link">Home</Link>
             <Link href="/about" className="desktop-nav-link">About</Link>
             <Link href="/contact" className="desktop-nav-link">Contact</Link>
           </nav>
 
+          <Link href="/login" className="desktop-nav-signin">
+            Sign in
+          </Link>
           <Link href="/get-going" className="desktop-nav-cta">
             Launch your portal
             <ArrowUpRight className="h-4 w-4" />

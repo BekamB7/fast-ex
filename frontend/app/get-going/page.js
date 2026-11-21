@@ -1,48 +1,91 @@
-// frontend/app/get-going/page.js
 "use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, Building2, Mail, Lock, Phone, MapPin } from "lucide-react";
 import api from "@/lib/api";
 import { notifyToast } from "@/components/ui/feedback";
+
+const initialFormData = {
+  name: "",
+  adminEmail: "",
+  password: "",
+  phone: "",
+  address: "",
+};
 
 export default function GetGoing() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    name: "",
-    adminEmail: "",
-    password: "",
-    phone: "",
-    address: "",
-  });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [formData, setFormData] = useState(initialFormData);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const updateField = (field, value) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => ({ ...current, [field]: "" }));
+    setError("");
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const errors = {};
+    const name = formData.name.trim();
+    const adminEmail = formData.adminEmail.trim();
+
+    if (name.length < 2) {
+      errors.name = "Enter an organization name with at least 2 characters.";
+    } else if (name.length > 100) {
+      errors.name = "Organization names must be 100 characters or fewer.";
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+      errors.adminEmail = "Enter a valid administrator email address.";
+    }
+
+    if (formData.password.length < 6) {
+      errors.password = "Use at least 6 characters for your password.";
+    }
+
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setLoading(true);
     setError("");
+    setFieldErrors({});
 
     try {
-      const response = await api.post("/auth/register", formData);
+      await api.post("/auth/register", {
+        ...formData,
+        name,
+        adminEmail,
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+      });
 
-      if (response.data) {
-        // Registration successful, redirect to login or dashboard
-        notifyToast("Organization registered. Please sign in to continue.", "success");
-        router.push("/dashboard/login");
-      }
+      notifyToast("Organization registered. Please sign in to continue.", "success");
+      router.push("/login?registered=1");
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Registration failed. Please try again.",
+          err.response?.data?.error ||
+          "Registration failed. Please try again.",
       );
     } finally {
       setLoading(false);
     }
   };
+
+  const fieldError = (field) =>
+    fieldErrors[field] ? (
+      <span className="form-field-error" id={`${field}-error`}>
+        {fieldErrors[field]}
+      </span>
+    ) : null;
 
   return (
     <div className="container max-w-2xl py-8 md:py-12">
@@ -65,96 +108,130 @@ export default function GetGoing() {
         transition={{ delay: 0.1 }}
         className="card form-card"
       >
-        <form onSubmit={handleSubmit} className="form-stack">
+        <form onSubmit={handleSubmit} className="form-stack" noValidate>
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-4 rounded-lg">
+            <div className="form-feedback form-feedback-error" role="alert">
               {error}
             </div>
           )}
 
-          <div className="field">
-            <label>Organization Name *</label>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Your organization name"
-                className="field-control with-icon"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                required
-              />
+          <section className="form-section" aria-labelledby="organization-details">
+            <div className="form-section-heading">
+              <h2 id="organization-details">Organization details</h2>
+              <p>Set up the organization learners will see.</p>
             </div>
-          </div>
 
-          <div className="field">
-            <label>Admin Email *</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="email"
-                placeholder="admin@yourorg.com"
-                className="field-control with-icon"
-                value={formData.adminEmail}
-                onChange={(e) =>
-                  setFormData({ ...formData, adminEmail: e.target.value })
-                }
-                required
-              />
+            <div className="field">
+              <label htmlFor="organization-name">Organization name *</label>
+              <div className="relative">
+                <Building2 aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  id="organization-name"
+                  name="name"
+                  type="text"
+                  autoComplete="organization"
+                  placeholder="Your organization name"
+                  className="field-control with-icon"
+                  value={formData.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                  minLength={2}
+                  maxLength={100}
+                  required
+                />
+              </div>
+              {fieldError("name")}
             </div>
-          </div>
 
-          <div className="field">
-            <label>Password *</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="password"
-                placeholder="Min 6 characters"
-                className="field-control with-icon"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                required
-                minLength={6}
-              />
+            <div className="field">
+              <label htmlFor="organization-phone">Phone number <span>(optional)</span></label>
+              <div className="relative">
+                <Phone aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  id="organization-phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="Your contact number"
+                  className="field-control with-icon"
+                  value={formData.phone}
+                  onChange={(event) => updateField("phone", event.target.value)}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="field">
-            <label>Phone</label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="tel"
-                placeholder="0912345678"
-                className="field-control with-icon"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-              />
+            <div className="field">
+              <label htmlFor="organization-address">Address <span>(optional)</span></label>
+              <div className="relative">
+                <MapPin aria-hidden="true" className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                <textarea
+                  id="organization-address"
+                  name="address"
+                  autoComplete="street-address"
+                  placeholder="Organization address"
+                  className="field-control with-icon"
+                  rows={2}
+                  value={formData.address}
+                  onChange={(event) => updateField("address", event.target.value)}
+                />
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className="field">
-            <label>Address</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-              <textarea
-                placeholder="Your organization address"
-                className="field-control with-icon"
-                rows="2"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-              />
+          <section className="form-section" aria-labelledby="administrator-account">
+            <div className="form-section-heading">
+              <h2 id="administrator-account">Administrator account</h2>
+              <p>Use these details to manage your exam workspace.</p>
             </div>
-          </div>
+
+            <div className="field">
+              <label htmlFor="admin-email">Administrator email *</label>
+              <div className="relative">
+                <Mail aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  id="admin-email"
+                  name="adminEmail"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="admin@yourorg.com"
+                  className="field-control with-icon"
+                  value={formData.adminEmail}
+                  onChange={(event) => updateField("adminEmail", event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.adminEmail)}
+                  aria-describedby={fieldErrors.adminEmail ? "adminEmail-error" : undefined}
+                  required
+                />
+              </div>
+              {fieldError("adminEmail")}
+            </div>
+
+            <div className="field">
+              <label htmlFor="admin-password">Password *</label>
+              <div className="relative">
+                <Lock aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  id="admin-password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="At least 6 characters"
+                  className="field-control with-icon"
+                  value={formData.password}
+                  onChange={(event) => updateField("password", event.target.value)}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={fieldErrors.password ? "password-error" : "password-hint"}
+                  minLength={6}
+                  required
+                />
+              </div>
+              {fieldError("password") || (
+                <span className="form-field-hint" id="password-hint">
+                  Use at least 6 characters.
+                </span>
+              )}
+            </div>
+          </section>
 
           <button
             type="submit"
@@ -162,14 +239,20 @@ export default function GetGoing() {
             disabled={loading}
           >
             {loading ? (
-              "Registering..."
+              <>
+                Registering…
+                <span className="form-spinner" aria-hidden="true" />
+              </>
             ) : (
               <>
-                Register Organization
-                <ArrowRight className="w-4 h-4" />
+                Register organization
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </>
             )}
           </button>
+          <p className="auth-switch">
+            Already have an organization? <Link href="/login">Sign in</Link>
+          </p>
         </form>
       </motion.div>
     </div>

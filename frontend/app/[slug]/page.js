@@ -113,7 +113,7 @@ export default function OrganizationPage() {
             <Building2 style={{ width: '4rem', height: '4rem', color: 'var(--color-muted-foreground)', margin: '0 auto 1rem' }} />
             <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Organization Not Found</h2>
             <p style={{ color: 'var(--color-muted-foreground)' }}>
-              The organization you're looking for doesn't exist.
+              The organization you&apos;re looking for doesn&apos;t exist.
             </p>
           </div>
         </div>
